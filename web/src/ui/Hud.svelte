@@ -1,4 +1,3 @@
-<!-- /src/ui/Hud.svelte -->
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
 
@@ -14,16 +13,20 @@
 
   export let spinning = false;
 
+  export let autoActive = false;               // NOVO: exibe STOP
+  export let onStopAuto: (()=>void) | null = null;
+
   export let onSpin: (()=>void) | null = null;
   export let onInfo: (()=>void) | null = null;
 
   const dispatch = createEventDispatcher();
 
   const pretty = (n:number)=> (n/1_000_000).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+  const modeLabel = (m:string)=> m.replace(/_/g,' ').toUpperCase();
 
   function spin(){ onSpin?.(); }
   function info(){ onInfo?.(); }
-  const modeLabel = (m:string)=> m.replace(/_/g,' ').toUpperCase();
+  function stopAuto(){ onStopAuto?.(); }
 </script>
 
 <div class="hud" role="region" aria-label="Controles">
@@ -65,13 +68,16 @@
         <button class="ghost" type="button" on:click={() => dispatch('openAuto')}>AUTO</button>
         <button class="ghost" type="button" on:click={() => dispatch('openModes')}>MODOS</button>
         <button class="ghost" type="button" on:click={() => dispatch('openSettings')}>⚙</button>
+        {#if autoActive}
+          <button class="stop" type="button" on:click={stopAuto} aria-label="Parar autoplay imediatamente">STOP</button>
+        {/if}
       </div>
     </div>
   </div>
 </div>
 
 <style>
-.hud{position:absolute;left:0;right:0;bottom:0;padding:10px 18px}
+.hud{position:absolute;left:0;right:0;bottom:0;padding:12px 18px}
 .row{display:flex;justify-content:space-between;gap:14px;align-items:center}
 .group{display:flex;gap:16px;align-items:center}
 .group.right{margin-left:auto}
@@ -85,4 +91,5 @@ button{background:#222;border:1px solid #383838;border-radius:10px;padding:10px 
 button.spin{background:#2c3f7a;border-color:#3a59a8}
 button[disabled]{opacity:.5;cursor:not-allowed}
 .ghost{background:transparent}
+.stop{background:#7a2c2c;border-color:#a83a3a}
 </style>

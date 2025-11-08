@@ -1,6 +1,4 @@
 // /src/stage/createStage.ts
-// Compatível com Pixi v8: usa Application.init(), app.canvas e BlurFilter.strength
-
 import {
   Application,
   Container,
@@ -12,7 +10,7 @@ import {
 } from 'pixi.js';
 
 const REELS = 5;
-const ROWS = 3;
+const ROWS = 3;               // ✅ corrigido
 const PADDING = 14;
 const CELL_R = 18;
 
@@ -27,10 +25,13 @@ type Cell = {
 
 type Column = {
   root: Container;   // wrapper
-  rail: Container;   // trilho (para bumps)
+  rail: Container;   // trilho (deslocado verticalmente)
   cells: Cell[];
   glow: Graphics;    // brilho ao parar
   lock: Graphics;    // overlay de reel lock
+  spinning: boolean;
+  speed: number;     // px por frame (escala do ticker)
+  step: number;      // altura efetiva do “tile” (rowH + PADDING)
 };
 
 export type StageAPI = {
@@ -67,6 +68,11 @@ function textFor(sym: string): string {
     S:'🧨',
   };
   return emoji[sym] ?? sym;
+}
+
+function randSym(): string {
+  const pool = ['A','B','C','D','E','F','G','H','I'];
+  return pool[(Math.random()*pool.length)|0];
 }
 
 function makeCell(w: number, h: number): Cell {
@@ -121,7 +127,6 @@ function bump(rail: Container, ticker: Ticker) {
 }
 
 export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
-  // Pixi v8: construir + init
   const app = new Application();
   await app.init({
     backgroundAlpha: 0,
@@ -149,11 +154,15 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
   const columns: Column[] = [];
 
   const blur = new BlurFilter();
-  blur.strength = 0;            // v8 usa strength
+  blur.strength = 0;
   root.filters = [blur];
 
   let hypeText: Text | null = null;
   let fsBadge: Text | null = null;
+
+  // layout vars
+  let colW = 0;
+  let rowH = 0;
 
   function layout() {
     const W = hostEl.clientWidth;
@@ -176,8 +185,9 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
     const gridH = stageH - padOuter * 2;
     grid.position.set(padOuter, padOuter);
 
-    const colW = (gridW - (REELS - 1) * PADDING) / REELS;
-    const rowH = (gridH - (ROWS - 1) * PADDING) / ROWS;
+    colW = (gridW - (REELS - 1) * PADDING) / REELS;
+    rowH = (gridH - (ROWS - 1) * PADDING) / ROWS;
+    const step = rowH + PADDING;
 
     if (columns.length === 0) {
       for (let c = 0; c < REELS; c++) {
@@ -198,7 +208,10 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
         lock.visible = false;
         rootCol.addChild(lock);
 
-        columns.push({ root: rootCol, rail, cells, glow, lock });
+        columns.push({
+          root: rootCol, rail, cells, glow, lock,
+          spinning: false, speed: 0, step
+        });
         grid.addChild(rootCol);
       }
 
@@ -233,9 +246,11 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
       col.lock.clear();
       col.lock.roundRect(0, 0, colW, gridH, CELL_R).fill({ color: 0x112200, alpha: 0.42 });
 
+      col.step = step;
+
       for (let r = 0; r < ROWS; r++) {
         const cell = col.cells[r];
-        cell.root.position.set(0, r * (rowH + PADDING));
+        cell.root.position.set(0, r * step);
         cell.bg.clear();
         cell.bg.roundRect(0, 0, colW, rowH, CELL_R).fill(0x111111);
         cell.label.style.fontSize = Math.round(rowH * 0.38);
@@ -259,12 +274,34 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
     ticker.add(fn);
   }
 
-  layout();
+  // ticker para “rolar” enquanto spinning=true
+  const spinTicker = (tk: Ticker) => {
+    for (const col of columns) {
+      if (!col.spinning) continue;
+      col.rail.y += col.speed * (tk.deltaTime / 1.0);
+      if (col.rail.y >= col.step) {
+        col.rail.y -= col.step;
+        // shift visual das labels/bgs
+        for (let r = ROWS - 1; r > 0; r--) {
+          const above = col.cells[r - 1];
+          const here = col.cells[r];
+          here.label.text = above.label.text;
+          here.bg.tint = (above.bg.tint as any) ?? 0x111111;
+          here.label.alpha = above.label.alpha;
+        }
+        const top = col.cells[0];
+        const rnd = randSym();
+        top.bg.tint = colorFor(rnd);
+        top.label.text = textFor(rnd);
+        top.label.alpha = 1;
+      }
+    }
+  };
 
+  layout();
   const ro = new ResizeObserver(() => layout());
   ro.observe(hostEl);
 
-  // Em v8, use app.canvas (não app.view)
   hostEl.innerHTML = '';
   hostEl.appendChild(app.canvas as any);
 
@@ -272,6 +309,10 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
     const idx = reel - 1;
     const col = columns[idx];
     if (!col) return;
+
+    // parar esse rolo
+    col.spinning = false;
+    col.rail.y = 0;
 
     for (let r = 0; r < ROWS; r++) {
       const sym = symbols[r] ?? 'X';
@@ -295,14 +336,14 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
 
     const g = cell.stroke!;
     g.clear();
-    g.roundRect(3, 3, cell.bg.width - 6, cell.bg.height - 6, CELL_R - 6).stroke({ color: 0xf5d742, width: 4 });
+    g.roundRect(3, 3, colW - 6, rowH - 6, CELL_R - 6).stroke({ color: 0xf5d742, width: 4 });
 
     const t = new Text({
       text: `x${mult}`,
-      style: new TextStyle({ fill: 0xf5d742, fontSize: Math.round(cell.bg.height * 0.24), fontWeight: '900' })
+      style: new TextStyle({ fill: 0xf5d742, fontSize: Math.round(rowH * 0.24), fontWeight: '900' })
     });
     t.anchor.set(0.5);
-    t.position.set(cell.bg.width - 28, 24);
+    t.position.set(colW - 28, 24);
     cell.root.addChild(t);
 
     let s = 0.6;
@@ -328,10 +369,7 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
   }
 
   function setReelLocked(reels: number[]) {
-    for (let i = 0; i < REELS; i++) {
-      const col = columns[i];
-      col.lock.visible = reels.includes(i + 1);
-    }
+    for (let i = 0; i < REELS; i++) columns[i].lock.visible = reels.includes(i + 1);
   }
 
   function clearRespin() { for (let i = 0; i < REELS; i++) columns[i].lock.visible = false; }
@@ -346,7 +384,19 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
     setTimeout(() => fadeTo(respinFlash, 1, 0, 260), 120);
   }
 
+  let spinTickerAdded = false; // ✅ evita add duplicado
+
   function startSpin() {
+    if (!spinTickerAdded) {
+      ticker.add(spinTicker);
+      spinTickerAdded = true;
+    }
+    for (let i = 0; i < REELS; i++) {
+      const col = columns[i];
+      col.spinning = true;
+      col.speed = 8 + Math.random() * 6; // px/frame
+    }
+
     let cur = blur.strength;
     const fn = (tk: Ticker) => {
       cur += 0.25;
