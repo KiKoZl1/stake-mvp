@@ -1,0 +1,17 @@
+import * as PIXI from 'pixi.js';
+import { type Props as BaseProps } from './Graphics.svelte';
+import type { PixiPoint } from '../types';
+export type Props = Omit<BaseProps, 'pivot' | 'draw'> & {
+    anchor?: PixiPoint;
+    width: Parameters<PIXI.Graphics['roundRect']>[2];
+    height: Parameters<PIXI.Graphics['roundRect']>[3];
+    borderRadius?: Parameters<PIXI.Graphics['roundRect']>[4];
+    backgroundColor?: PIXI.FillStyle['color'];
+    backgroundAlpha?: PIXI.FillStyle['alpha'];
+    borderColor?: PIXI.StrokeStyle['color'];
+    borderWidth?: PIXI.StrokeStyle['width'];
+    borderAlpha?: PIXI.StrokeStyle['alpha'];
+};
+declare const Rectangle: import("svelte").Component<Props, {}, "">;
+type Rectangle = ReturnType<typeof Rectangle>;
+export default Rectangle;
