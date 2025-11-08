@@ -8,7 +8,7 @@
   import Hud from './ui/Hud.svelte';
 
   import { createStage, type StageAPI } from './stage/createStage';
-  import emitter from './events/emitter';              // <= default
+  import emitter from './events/emitter';
 
   import { authenticate, play, endRound, getRgsUrl } from './rgs/client';
 
@@ -17,8 +17,8 @@
   let spinning = false;
   let turbo = false;
 
-  let balance = 100_000_000;
-  let bet = 1_000_000;
+  let balance = 100_000_000; // 100.00
+  let bet = 1_000_000;       // 1.00
   let mode = 'base';
 
   let totalWin = 0;
@@ -42,12 +42,14 @@
   let viewEl: HTMLDivElement;
 
   const sleep = (ms:number)=> new Promise(r=>setTimeout(r,ms));
-  const fmt = (v:number)=> (v/1_000_000).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
 
-  function haveRgs(): boolean { try { return !!getRgsUrl(); } catch { return false; } }
+  function haveRgs(): boolean {
+    try { return !!getRgsUrl(); } catch { return false; }
+  }
 
   onMount(async () => {
-    stage = createStage(viewEl);   // <= sync agora
+    // >>>>>>>>>>> IMPORTANTE: agora é async (Pixi v8)
+    stage = await createStage(viewEl);
 
     try {
       if (haveRgs()) {
@@ -55,19 +57,20 @@
         balance = auth.balance ?? balance;
       }
     } catch (err) {
-      console.warn('authenticate falhou (debug ok):', err);
+      console.warn('authenticate falhou (modo debug ok):', err);
     }
+
     wireEvents();
   });
 
   function wireEvents() {
-    emitter.on('spinStart', async () => {
+    emitter.on('spinStart', () => {
       spinning = true;
       totalWin = 0; lastWin = 0; lastWinDisplay = 0;
       fsIndex = 0; fsTotal = 0; hype = 0;
       stage?.setFsMode(false);
       stage?.clearRespin();
-      stage?.startSpin();                 // BLUR on
+      stage?.startSpin();
     });
 
     emitter.on('reelStop', async (e:any) => {
@@ -76,37 +79,35 @@
     });
 
     emitter.on('waysWin', async (e:any) => {
-      const raw = (e.ways ?? []).reduce((acc:number, w:any) => acc + (w.win ?? 0), 0);
+      const raw = (e.ways ?? []).reduce((acc:number,w:any)=>acc+(w.win??0),0);
       lastWin = raw; totalWin += raw;
-      animateTo((v)=> lastWinDisplay = v, lastWinDisplay, lastWin, turbo ? 140 : 220);
+      animateTo(v => lastWinDisplay = v, lastWinDisplay, lastWin, turbo?140:220);
       await sleep(turbo ? 80 : 160);
     });
 
-    emitter.on('setTotalWin', async (e:any) => {
-      totalWin = e.amount ?? totalWin;
-    });
+    emitter.on('setTotalWin', (e:any) => { totalWin = e.amount ?? totalWin; });
 
-    emitter.on('fsStart', async (e:any) => {
-      fsIndex = 0; fsTotal = e.totalSpins ?? 0;
-      stage?.setFsMode(true);
-    });
-    emitter.on('fsSpinStart', async (e:any) => { fsIndex = e.index ?? fsIndex; });
-    emitter.on('stickyWildAdd', async (e:any) => { stage?.setSticky(e.reel, e.row, e.mult); await sleep(turbo ? 40 : 120); });
-    emitter.on('hypeUp', async (e:any) => { hype = e.value ?? hype; stage?.setHype(hype); await sleep(turbo ? 40 : 120); });
-    emitter.on('fsEnd', async () => { stage?.setFsMode(false); });
+    // FS
+    emitter.on('fsStart', (e:any) => { fsIndex = 0; fsTotal = e.totalSpins ?? 0; stage?.setFsMode(true); });
+    emitter.on('fsSpinStart', (e:any) => { fsIndex = e.index ?? fsIndex; });
+    emitter.on('stickyWildAdd', async (e:any) => { stage?.setSticky(e.reel, e.row, e.mult); await sleep(turbo?40:120); });
+    emitter.on('hypeUp', async (e:any) => { hype = e.value ?? hype; stage?.setHype(hype); await sleep(turbo?40:120); });
+    emitter.on('fsEnd', () => { stage?.setFsMode(false); });
 
-    emitter.on('respinStart', async () => { stage?.flashRespin(); });
-    emitter.on('reelLock', async (e:any) => { stage?.setReelLocked(e.reels ?? []); });
+    // Respin
+    emitter.on('respinStart', () => { stage?.flashRespin(); });
+    emitter.on('reelLock', (e:any) => { stage?.setReelLocked(e.reels ?? []); });
 
+    // Final
     emitter.on('finalWin', async () => {
       balance += totalWin;
       try {
-        if (haveRgs()) await endRound({ totalWin });   // <= objeto
+        if (haveRgs()) await endRound({ totalWin });
       } catch (err) {
         console.warn('endRound falhou (debug ok):', err);
       }
       spinning = false;
-      stage?.endSpin();                                // BLUR off
+      stage?.endSpin();
 
       if (autoCount !== null) {
         const stopBonus = autoRules.stopOnBonus && fsTotal > 0;
@@ -121,7 +122,9 @@
           } else {
             autoCount = null;
           }
-        } else { autoCount = null; }
+        } else {
+          autoCount = null;
+        }
       }
     });
   }
@@ -139,14 +142,41 @@
   async function onSpin() {
     if (spinning) return;
     if (bet > balance) return;
-    try {
-      await play({ bet, mode });  // <= sem turbo
-    } catch (err) {
-      console.error('play error:', err);
+
+    if (haveRgs()) {
+      try {
+        await play({ bet, mode });
+      } catch (err) {
+        console.error('play error:', err);
+      }
+      return;
     }
+
+    // --------- Fallback DEBUG (sem RGS) ----------
+    await debugSpin();
   }
 
-  function onStart() { showIntro = false; }
+  async function debugSpin() {
+    emitter.emit('spinStart', undefined);
+
+    const symbolsSet = [
+      ['A','E','W2'], ['E','E','G'], ['E','W3','G'], ['H','A','D'], ['I','A','D']
+    ];
+    for (let r=1;r<=5;r++){
+      emitter.emit('reelStop', { reel:r, symbols: symbolsSet[r-1] });
+      await sleep(turbo ? 40 : 160);
+    }
+
+    emitter.emit('waysWin', { ways:[
+      { win: 250000 }, { win: 500000 }
+    ]});
+    emitter.emit('setTotalWin', { amount: 750000 });
+
+    await sleep(turbo ? 120 : 300);
+    emitter.emit('finalWin', undefined);
+  }
+
+  function onStart(){ showIntro = false; }
   function changeAudio(e:any){ ({ music, sfx, muted } = e.detail); }
   function applyAuto(e:any){
     autoCount = e.detail.count;
@@ -184,4 +214,3 @@
 <Settings open={showSettings} {music} {sfx} {muted} on:change={changeAudio} on:close={() => showSettings = false} />
 <Autoplay open={showAuto} on:apply={applyAuto} on:close={() => showAuto = false} />
 <ModePanel open={showModes} on:mode={onMode} on:buy={onBuy} on:close={() => showModes = false} />
-
