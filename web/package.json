@@ -7,13 +7,19 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json"
+    "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^6.2.1",
     "@tsconfig/svelte": "^5.0.5",
     "@types/howler": "^2.2.12",
     "@types/node": "^24.6.0",
+    "@storybook/addon-docs": "^9.0.0",
+    "@storybook/addon-viewport": "^9.0.0",
+    "@storybook/svelte-vite": "^9.0.0",
+    "storybook": "^9.0.0",
     "svelte": "^5.39.6",
     "svelte-check": "^4.3.2",
     "typescript": "~5.9.3",

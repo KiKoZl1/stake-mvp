@@ -134,45 +134,51 @@
     width: 100%;
     display: flex;
     justify-content: center;
-    padding: 0 clamp(16px, 4vw, 36px);
+    padding: 0 clamp(12px, 3vw, 28px);
     pointer-events: none;
   }
   .panel {
     pointer-events: auto;
     display: flex;
-    gap: 16px;
-    background: rgba(5, 7, 14, 0.88);
+    gap: 14px;
+    background: rgba(5, 7, 14, 0.9);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 22px;
-    padding: 16px clamp(18px, 4vw, 32px);
-    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55);
+    border-radius: 20px;
+    padding: 14px clamp(16px, 3vw, 26px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
     flex-wrap: wrap;
-    max-width: 900px;
+    max-width: 760px;
   }
-.segment {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex: 1;
-  min-width: 220px;
-}
+  .segment {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+    min-width: 200px;
+  }
+  .segment.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+  }
   .segment.actions {
     justify-content: center;
     flex-direction: column;
     text-align: center;
     padding: 0 12px;
   }
-.segment.meta {
-  flex-direction: column;
-  align-items: flex-end;
-}
-.stat-card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  padding: 10px 14px;
-  min-width: 120px;
-}
+  .segment.meta {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+  }
+  .stat-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 10px 14px;
+    min-width: 0;
+  }
 .stat-card .label {
   font-size: 0.75rem;
   text-transform: uppercase;
@@ -221,25 +227,25 @@
   gap: 10px;
 }
   .spin {
-    width: 160px;
-    height: 64px;
+    width: 150px;
+    height: 60px;
     border-radius: 999px;
     border: none;
     background: radial-gradient(circle at 20% 20%, #ffec8a, #ff6b3b);
     color: #1c0f05;
     font-size: 1.4rem;
     font-weight: 800;
-    box-shadow: 0 10px 26px rgba(255, 123, 0, 0.35);
+    box-shadow: 0 8px 22px rgba(255, 123, 0, 0.32);
   }
 .spin small {
   display: block;
   font-size: 0.65rem;
   letter-spacing: 0.08em;
 }
-.quick {
-  display: flex;
-  gap: 12px;
-}
+  .quick {
+    display: flex;
+    gap: 10px;
+  }
 .ghost {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -276,10 +282,10 @@
   padding: 10px 18px;
   font-weight: 800;
 }
-.badge-grid {
-  display: flex;
-  gap: 12px;
-}
+  .badge-grid {
+    display: flex;
+    gap: 10px;
+  }
 .badge {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;

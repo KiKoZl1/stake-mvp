@@ -7,19 +7,24 @@ import {
   TextStyle,
   BlurFilter,
   Ticker,
+  Sprite,
+  Texture,
 } from 'pixi.js';
 
 const REELS = 5;
 const ROWS = 3;               // ✅ corrigido
 const PADDING = 14;
 const CELL_R = 18;
+const BUFFER_ABOVE = 2;
+const BUFFER_BELOW = 2;
+const TOTAL_ROWS = ROWS + BUFFER_ABOVE + BUFFER_BELOW;
 
 const MERICA_MODE = true;
 
 type Cell = {
   root: Container;
   bg: Graphics;
-  label: Text;
+  icon: Sprite;
   stroke?: Graphics;
   symbol: string;
 };
@@ -33,6 +38,8 @@ type Column = {
   spinning: boolean;
   speed: number;     // px por frame (escala do ticker)
   step: number;      // altura efetiva do “tile” (rowH + PADDING)
+  scroll: number;
+  targetSpeed: number;
 };
 
 export type StageAPI = {
@@ -94,33 +101,19 @@ function makeCell(w: number, h: number): Cell {
   bg.roundRect(0, 0, w, h, CELL_R).fill(0x111111);
   bg.alpha = 0.95;
 
-  const label = new Text({
-    text: '',
-    style: new TextStyle({
-      fill: 0xffffff,
-      fontSize: Math.round(h * 0.38),
-      fontWeight: '900',
-      letterSpacing: 1,
-      fontFamily: 'Inter, Arial, system-ui'
-    })
-  });
-  label.anchor.set(0.5);
-  label.position.set(w/2, h/2);
-
   root.addChild(bg);
-  root.addChild(label);
+
+  const icon = new Sprite(Texture.WHITE);
+  icon.anchor.set(0.5);
+  icon.position.set(w / 2, h / 2);
+  icon.alpha = 0.98;
+  icon.width = icon.height = Math.min(w, h) * 0.7;
+  root.addChild(icon);
 
   const stroke = new Graphics();
   root.addChild(stroke);
 
-  return { root, bg, label, stroke, symbol: 'A' };
-}
-
-function applySymbol(cell: Cell, sym: string) {
-  cell.symbol = sym;
-  cell.bg.tint = colorFor(sym);
-  cell.label.text = sym.startsWith('W') ? sym : textFor(sym);
-  cell.label.alpha = 1;
+  return { root, bg, icon, stroke, symbol: 'A' };
 }
 
 function bump(rail: Container, ticker: Ticker) {
@@ -187,6 +180,288 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
   // layout vars
   let colW = 0;
   let rowH = 0;
+  let symbolSize = 0;
+
+  const symbolTextureCache = new Map<string, Texture>();
+  const lowSymbols = new Set(['A', 'B', 'C', 'D']);
+  const midSymbols = new Set(['E', 'F', 'G']);
+  const highSymbols = new Set(['H', 'I']);
+
+  const paletteForSymbol = (sym: string) => {
+    if (sym.startsWith('W')) {
+      return { base: 0x2a1701, inner: 0x4a2a05, stroke: 0xffd46d, text: 0xfff6d1 };
+    }
+    if (sym === 'S') {
+      return { base: 0x071630, inner: 0x0e2755, stroke: 0x6ec2ff, text: 0xe0f3ff };
+    }
+    if (highSymbols.has(sym)) {
+      return { base: 0x251033, inner: 0x3d1950, stroke: 0xf071ff, text: 0xffe6ff };
+    }
+    if (midSymbols.has(sym)) {
+      return { base: 0x101f2d, inner: 0x163346, stroke: 0x6dd8ff, text: 0xe6f7ff };
+    }
+    return { base: 0x2b1710, inner: 0x3c2118, stroke: 0xffa25f, text: 0xfff4dc };
+  };
+
+  const clearSymbolTextures = () => {
+    symbolTextureCache.forEach((tex) => tex.destroy(true));
+    symbolTextureCache.clear();
+  };
+
+  const ensureSymbolSize = (size: number) => {
+    const rounded = Math.max(16, Math.round(size));
+    if (rounded !== symbolSize) {
+      clearSymbolTextures();
+      symbolSize = rounded;
+    }
+  };
+
+  const createSymbolTexture = (sym: string): Texture => {
+    const palette = paletteForSymbol(sym);
+    const box = new Container();
+    const size = symbolSize;
+    const base = new Graphics();
+    base.roundRect(0, 0, size, size, size * 0.24)
+      .fill(palette.base)
+      .stroke({ color: palette.stroke, width: size * 0.08 });
+    box.addChild(base);
+
+    const inner = new Graphics();
+    inner.roundRect(size * 0.08, size * 0.08, size * 0.84, size * 0.84, size * 0.2)
+      .fill(palette.inner);
+    inner.alpha = 0.9;
+    box.addChild(inner);
+
+    const gloss = new Graphics();
+    gloss.roundRect(size * 0.16, size * 0.14, size * 0.68, size * 0.26, size * 0.18)
+      .fill(0xffffff, 0.12);
+    box.addChild(gloss);
+
+    const icon = buildSymbolIcon(sym, size);
+    box.addChild(icon);
+
+    const tex = app.renderer.generateTexture(box);
+    box.destroy({ children: true });
+    return tex;
+  };
+
+  const textureForSymbol = (sym: string) => {
+    const key = `${sym}:${symbolSize}`;
+    if (!symbolTextureCache.has(key)) {
+      symbolTextureCache.set(key, createSymbolTexture(sym));
+    }
+    return symbolTextureCache.get(key)!;
+  };
+
+  const buildSymbolIcon = (sym: string, size: number) => {
+    if (sym.startsWith('W')) {
+      const icon = new Container();
+      icon.pivot.set(size / 2, size / 2);
+      icon.position.set(size / 2, size / 2);
+      const shield = new Graphics();
+      shield.roundRect(size * 0.24, size * 0.16, size * 0.52, size * 0.64, size * 0.28)
+        .fill(0x2a1300)
+        .stroke({ color: 0xffde7a, width: size * 0.05 });
+      icon.addChild(shield);
+      const label = new Text({
+        text: `x${sym.slice(1)}`,
+        style: new TextStyle({
+          fill: 0xfff3c5,
+          fontSize: size * 0.42,
+          fontWeight: '900'
+        })
+      });
+      label.anchor.set(0.5);
+      label.position.set(size / 2, size / 2);
+      icon.addChild(label);
+      return icon;
+    }
+
+    const icon = new Container();
+    icon.pivot.set(size / 2, size / 2);
+    icon.position.set(size / 2, size / 2);
+    const add = (...parts: Graphics[]) => parts.forEach((part) => icon.addChild(part));
+
+    const makeCircle = (x: number, y: number, r: number, color: number, alpha = 1) => {
+      const g = new Graphics();
+      g.circle(x, y, r).fill(color, alpha);
+      return g;
+    };
+
+    const makePolygon = (points: Array<[number, number]>, color: number, alpha = 1) => {
+      const g = new Graphics();
+      points.forEach(([x, y], idx) => {
+        if (idx === 0) g.moveTo(x, y);
+        else g.lineTo(x, y);
+      });
+      g.closePath().fill(color, alpha);
+      return g;
+    };
+
+    switch (sym) {
+      case 'A': {
+        const cup = new Graphics();
+        cup.roundRect(size * 0.32, size * 0.28, size * 0.36, size * 0.46, size * 0.08).fill(0xff4f5e);
+        const rim = new Graphics();
+        rim.roundRect(size * 0.30, size * 0.22, size * 0.40, size * 0.08, size * 0.04).fill(0xfff4ef);
+        const handle = new Graphics();
+        handle.roundRect(size * 0.62, size * 0.34, size * 0.12, size * 0.26, size * 0.05)
+          .stroke({ color: 0xffcfc2, width: size * 0.02 });
+        add(cup, rim, handle);
+        break;
+      }
+      case 'B': {
+        const top = new Graphics();
+        top.roundRect(size * 0.26, size * 0.28, size * 0.48, size * 0.18, size * 0.1).fill(0xffc46d);
+        const patty = new Graphics();
+        patty.roundRect(size * 0.28, size * 0.44, size * 0.44, size * 0.12, size * 0.05).fill(0x5d3118);
+        const bottom = new Graphics();
+        bottom.roundRect(size * 0.28, size * 0.56, size * 0.44, size * 0.14, size * 0.07).fill(0xffa047);
+        add(top, patty, bottom);
+        break;
+      }
+      case 'C': {
+        const lensL = new Graphics();
+        lensL.roundRect(size * 0.22, size * 0.4, size * 0.2, size * 0.14, size * 0.08).fill(0x1f66ff, 0.8);
+        const lensR = new Graphics();
+        lensR.roundRect(size * 0.58, size * 0.4, size * 0.2, size * 0.14, size * 0.08).fill(0x1f66ff, 0.8);
+        const bridge = new Graphics();
+        bridge.roundRect(size * 0.42, size * 0.45, size * 0.16, size * 0.05, size * 0.02).fill(0x0d0d0d);
+        const frame = new Graphics();
+        frame.roundRect(size * 0.20, size * 0.46, size * 0.60, size * 0.04, size * 0.02).fill(0x111111);
+        add(lensL, lensR, bridge, frame);
+        break;
+      }
+      case 'D': {
+        const brim = new Graphics();
+        brim.roundRect(size * 0.20, size * 0.56, size * 0.60, size * 0.12, size * 0.12).fill(0x492c11);
+        const crown = new Graphics();
+        crown.roundRect(size * 0.30, size * 0.32, size * 0.40, size * 0.30, size * 0.08).fill(0x704018);
+        add(brim, crown);
+        break;
+      }
+      case 'E': {
+        const body = new Graphics();
+        body.roundRect(size * 0.44, size * 0.18, size * 0.12, size * 0.38, size * 0.04).fill(0xff4f85);
+        const cone = makePolygon(
+          [
+            [size * 0.50, size * 0.06],
+            [size * 0.62, size * 0.18],
+            [size * 0.38, size * 0.18],
+          ],
+          0xffc85d
+        );
+        const tail = makePolygon(
+          [
+            [size * 0.44, size * 0.58],
+            [size * 0.56, size * 0.58],
+            [size * 0.50, size * 0.78],
+          ],
+          0xffdf6b
+        );
+        add(body, cone, tail);
+        break;
+      }
+      case 'F': {
+        const body = makeCircle(size * 0.42, size * 0.54, size * 0.16, 0xff7f4f);
+        const neck = new Graphics();
+        neck.roundRect(size * 0.48, size * 0.30, size * 0.12, size * 0.32, size * 0.04).fill(0xd99c63);
+        const hole = makeCircle(size * 0.42, size * 0.54, size * 0.06, 0x25100b);
+        add(body, neck, hole);
+        break;
+      }
+      case 'G': {
+        const outer = makeCircle(size * 0.5, size * 0.5, size * 0.22, 0x101010);
+        const ring = new Graphics();
+        ring.circle(size * 0.5, size * 0.5, size * 0.18).stroke({ color: 0x3b3b3b, width: size * 0.05 });
+        const inner = makeCircle(size * 0.5, size * 0.5, size * 0.08, 0x606060);
+        add(outer, ring, inner);
+        break;
+      }
+      case 'H': {
+        const wing = makePolygon(
+          [
+            [size * 0.20, size * 0.62],
+            [size * 0.46, size * 0.36],
+            [size * 0.80, size * 0.62],
+            [size * 0.62, size * 0.68],
+            [size * 0.38, size * 0.68],
+          ],
+          0xd6c299
+        );
+        const head = makeCircle(size * 0.58, size * 0.40, size * 0.10, 0xfff5d6);
+        const beak = makePolygon(
+          [
+            [size * 0.66, size * 0.42],
+            [size * 0.78, size * 0.45],
+            [size * 0.66, size * 0.48],
+          ],
+          0xffc857
+        );
+        add(wing, head, beak);
+        break;
+      }
+      case 'I': {
+        const bed = new Graphics();
+        bed.roundRect(size * 0.20, size * 0.48, size * 0.52, size * 0.20, size * 0.06).fill(0x2f7afc);
+        const cabin = new Graphics();
+        cabin.roundRect(size * 0.54, size * 0.38, size * 0.20, size * 0.18, size * 0.05).fill(0x4d8ffe);
+        const window = new Graphics();
+        window.roundRect(size * 0.58, size * 0.42, size * 0.12, size * 0.10, size * 0.03).fill(0xd8ecff);
+        const wheel1 = makeCircle(size * 0.32, size * 0.70, size * 0.08, 0x0f0f0f);
+        const wheel2 = makeCircle(size * 0.58, size * 0.70, size * 0.08, 0x0f0f0f);
+        const hub1 = makeCircle(size * 0.32, size * 0.70, size * 0.04, 0xffffff, 0.8);
+        const hub2 = makeCircle(size * 0.58, size * 0.70, size * 0.04, 0xffffff, 0.8);
+        add(bed, cabin, window, wheel1, wheel2, hub1, hub2);
+        break;
+      }
+      case 'S': {
+        const star = makePolygon(
+          [
+            [size * 0.50, size * 0.18],
+            [size * 0.60, size * 0.38],
+            [size * 0.82, size * 0.40],
+            [size * 0.66, size * 0.54],
+            [size * 0.72, size * 0.76],
+            [size * 0.50, size * 0.64],
+            [size * 0.28, size * 0.76],
+            [size * 0.34, size * 0.54],
+            [size * 0.18, size * 0.40],
+            [size * 0.40, size * 0.38],
+          ],
+          0xfff06a
+        );
+        const glow = new Graphics();
+        glow.circle(size * 0.5, size * 0.5, size * 0.3).stroke({ color: 0xfff06a, width: size * 0.03, alignment: 0.5 });
+        add(glow, star);
+        break;
+      }
+      default: {
+        const diamond = makePolygon(
+          [
+            [size / 2, size * 0.18],
+            [size * 0.78, size / 2],
+            [size / 2, size * 0.82],
+            [size * 0.22, size / 2],
+          ],
+          0xffffff,
+          0.12
+        );
+        add(diamond);
+        break;
+      }
+    }
+    return icon;
+  };
+
+  const applySymbol = (cell: Cell, sym: string) => {
+    cell.symbol = sym;
+    cell.bg.tint = colorFor(sym);
+    if (symbolSize <= 0) return;
+    cell.icon.texture = textureForSymbol(sym);
+    cell.icon.width = cell.icon.height = symbolSize;
+    cell.icon.position.set(colW / 2, rowH / 2);
+  };
 
   function layout() {
     const W = hostEl.clientWidth;
@@ -215,20 +490,22 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
     colW = (gridW - (REELS - 1) * PADDING) / REELS;
     rowH = (gridH - (ROWS - 1) * PADDING) / ROWS;
     const step = rowH + PADDING;
+    ensureSymbolSize(rowH * 0.72);
 
     if (columns.length === 0) {
       for (let c = 0; c < REELS; c++) {
         const rootCol = new Container();
         const rail = new Container();
-        const glow = new Graphics(); glow.alpha = 0;
+        const glow = new Graphics();
+        glow.alpha = 0;
         rootCol.addChild(glow);
         rootCol.addChild(rail);
 
         const cells: Cell[] = [];
-        for (let r = 0; r < ROWS; r++) {
+        for (let r = 0; r < TOTAL_ROWS; r++) {
           const cell = makeCell(colW, rowH);
+          cell.symbol = randSym();
           rail.addChild(cell.root);
-          applySymbol(cell, randSym());
           cells.push(cell);
         }
 
@@ -237,8 +514,16 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
         rootCol.addChild(lock);
 
         columns.push({
-          root: rootCol, rail, cells, glow, lock,
-          spinning: false, speed: 0, step
+          root: rootCol,
+          rail,
+          cells,
+          glow,
+          lock,
+          spinning: false,
+          speed: 0,
+          targetSpeed: 0,
+          step,
+          scroll: 0,
         });
         grid.addChild(rootCol);
       }
@@ -263,7 +548,7 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
       }
     }
 
-    for (let c = 0; c < REELS; c++) {
+    for (let c = 0; c < columns.length; c++) {
       const col = columns[c];
       const cx = c * (colW + PADDING);
       col.root.position.set(cx, 0);
@@ -275,16 +560,17 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
       col.lock.roundRect(0, 0, colW, gridH, CELL_R).fill({ color: 0x112200, alpha: 0.42 });
 
       col.step = step;
+      col.scroll = 0;
+      col.rail.y = -BUFFER_ABOVE * step;
 
-      for (let r = 0; r < ROWS; r++) {
-        const cell = col.cells[r];
-        cell.root.position.set(0, r * step);
+      col.cells.forEach((cell, idx) => {
+        cell.root.position.set(0, idx * step);
         cell.bg.clear();
         cell.bg.roundRect(0, 0, colW, rowH, CELL_R).fill(0x111111);
-        cell.label.style.fontSize = Math.round(rowH * 0.38);
-        cell.label.position.set(colW/2, rowH/2);
+        cell.icon.position.set(colW / 2, rowH / 2);
+        cell.icon.width = cell.icon.height = symbolSize;
         applySymbol(cell, cell.symbol);
-      }
+      });
     }
 
     if (fsBadge) fsBadge.position.set(stageW - 90, -6);
@@ -305,19 +591,19 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
 
   // ticker para “rolar” enquanto spinning=true
   const spinTicker = (tk: Ticker) => {
+    const delta = tk.deltaTime / 60;
     for (const col of columns) {
       if (!col.spinning) continue;
-      col.rail.y += col.speed * (tk.deltaTime / 1.0);
-      if (col.rail.y >= col.step) {
-        col.rail.y -= col.step;
-        for (let r = ROWS - 1; r > 0; r--) {
-          const sym = col.cells[r - 1].symbol;
-          applySymbol(col.cells[r], sym);
-        }
-        const top = col.cells[0];
-        const rnd = randSym();
-        applySymbol(top, rnd);
+      col.speed += (col.targetSpeed - col.speed) * 0.18;
+      col.scroll += col.speed * delta;
+      while (col.scroll >= col.step) {
+        col.scroll -= col.step;
+        const first = col.cells.shift()!;
+        col.cells.push(first);
+        applySymbol(first, randSym());
+        col.cells.forEach((cell, idx) => cell.root.position.set(0, idx * col.step));
       }
+      col.rail.y = -BUFFER_ABOVE * col.step + col.scroll;
     }
   };
 
@@ -335,14 +621,24 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
 
     // parar esse rolo
     col.spinning = false;
-    col.rail.y = 0;
+    col.targetSpeed = 0;
+    col.speed = 0;
+    col.scroll = 0;
+    col.rail.y = -BUFFER_ABOVE * col.step;
 
     for (let r = 0; r < ROWS; r++) {
       const sym = symbols[r] ?? randSym();
-      const cell = col.cells[r];
+      const cell = col.cells[BUFFER_ABOVE + r];
       applySymbol(cell, sym);
       cell.stroke?.clear();
     }
+    for (let i = 0; i < BUFFER_ABOVE; i++) {
+      applySymbol(col.cells[i], randSym());
+    }
+    for (let i = BUFFER_ABOVE + ROWS; i < TOTAL_ROWS; i++) {
+      applySymbol(col.cells[i], randSym());
+    }
+    col.cells.forEach((cell, idx2) => cell.root.position.set(0, idx2 * col.step));
 
     fadeTo(col.glow, 0, 1, 120);
     setTimeout(() => fadeTo(col.glow, 1, 0, 220), 140);
@@ -353,7 +649,7 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
     const idx = reel - 1;
     const col = columns[idx];
     if (!col) return;
-    const cell = col.cells[row] ?? col.cells[0];
+    const cell = col.cells[BUFFER_ABOVE + row] ?? col.cells[BUFFER_ABOVE];
 
     const g = cell.stroke!;
     g.clear();
@@ -415,7 +711,9 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
     for (let i = 0; i < REELS; i++) {
       const col = columns[i];
       col.spinning = true;
-      col.speed = 8 + Math.random() * 6; // px/frame
+      col.speed = 4 + Math.random() * 2;
+      col.targetSpeed = 16 + Math.random() * 5;
+      col.scroll = 0;
     }
 
     let cur = blur.strength;

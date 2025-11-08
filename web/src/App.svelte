@@ -43,7 +43,7 @@ let showModes = false;
 
 let viewEl: HTMLDivElement;
 let mascotMood: MascotMood = 'idle';
-let mascotTimer: ReturnType<typeof setTimeout> | null = null;
+let mascotTimer: number | undefined;
 
   const sleep = (ms:number)=> new Promise(r=>setTimeout(r,ms));
 
@@ -79,19 +79,19 @@ let mascotTimer: ReturnType<typeof setTimeout> | null = null;
   });
 
   onDestroy(() => {
-    if (mascotTimer) clearTimeout(mascotTimer);
+    if (mascotTimer !== undefined) clearTimeout(mascotTimer);
   });
 
   function setMascotMood(mood: MascotMood, backToIdleAfter = 0) {
     mascotMood = mood;
-    if (mascotTimer) {
+    if (mascotTimer !== undefined) {
       clearTimeout(mascotTimer);
-      mascotTimer = null;
+      mascotTimer = undefined;
     }
     if (backToIdleAfter > 0) {
       mascotTimer = window.setTimeout(() => {
         mascotMood = 'idle';
-        mascotTimer = null;
+        mascotTimer = undefined;
       }, backToIdleAfter);
     }
   }
