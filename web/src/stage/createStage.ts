@@ -40,6 +40,7 @@ type Column = {
   step: number;      // altura efetiva do “tile” (rowH + PADDING)
   scroll: number;
   targetSpeed: number;
+  accel: number;
 };
 
 export type StageAPI = {
@@ -51,8 +52,9 @@ export type StageAPI = {
   setReelLocked: (reels: number[]) => void;
   clearRespin: () => void;
   flashRespin: () => void;
-  startSpin: () => void;
+  startSpin: (opts?: { turbo?: boolean }) => void;
   endSpin: () => void;
+  highlightWays: (ways: Array<{ symbol: string; reels: number[] }>) => void;
 };
 
 function colorFor(sym: string): number {
@@ -168,19 +170,31 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
   respinFlash.alpha = 0;
   root.addChild(respinFlash);
 
+  const winOverlay = new Graphics();
+  winOverlay.zIndex = 4;
+  winOverlay.alpha = 0;
+  root.addChild(winOverlay);
+
   const columns: Column[] = [];
 
   const blur = new BlurFilter();
   blur.strength = 0;
   root.filters = [blur];
 
-  let hypeText: Text | null = null;
-  let fsBadge: Text | null = null;
-
   // layout vars
-  let colW = 0;
-  let rowH = 0;
-  let symbolSize = 0;
+let colW = 0;
+let rowH = 0;
+let symbolSize = 0;
+let turboMode = false;
+
+function gaussianRand(min = 0, max = 1) {
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  const num = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+  const normalized = (num / 3) + 0.5;
+  return min + normalized * (max - min);
+}
 
   const symbolTextureCache = new Map<string, Texture>();
   const lowSymbols = new Set(['A', 'B', 'C', 'D']);
@@ -461,6 +475,11 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
     cell.icon.texture = textureForSymbol(sym);
     cell.icon.width = cell.icon.height = symbolSize;
     cell.icon.position.set(colW / 2, rowH / 2);
+    cell.icon.scale.set(1);
+    cell.stroke?.clear();
+    if (sym.startsWith('W') || sym === 'S') {
+      cell.stroke?.roundRect(4, 4, colW - 8, rowH - 8, CELL_R - 6).stroke({ color: 0xfff28a, width: 3 });
+    }
   };
 
   function layout() {
@@ -522,30 +541,13 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
           spinning: false,
           speed: 0,
           targetSpeed: 0,
+          accel: 0.18,
           step,
           scroll: 0,
         });
         grid.addChild(rootCol);
       }
 
-      if (!hypeText) {
-        hypeText = new Text({
-          text: 'HYPE x0',
-          style: new TextStyle({ fill: 0x9efc79, fontSize: 20, fontWeight: '700' })
-        });
-        hypeText.position.set(8, -6);
-        hypeText.alpha = 0.95;
-        root.addChild(hypeText);
-      }
-      if (!fsBadge) {
-        fsBadge = new Text({
-          text: 'FS 0/0',
-          style: new TextStyle({ fill: 0xffffff, fontSize: 18, fontWeight: '700' })
-        });
-        fsBadge.position.set(stageW - 90, -6);
-        fsBadge.alpha = 0.9;
-        root.addChild(fsBadge);
-      }
     }
 
     for (let c = 0; c < columns.length; c++) {
@@ -572,8 +574,6 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
         applySymbol(cell, cell.symbol);
       });
     }
-
-    if (fsBadge) fsBadge.position.set(stageW - 90, -6);
   }
 
   const ticker = app.ticker;
@@ -594,8 +594,11 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
     const delta = tk.deltaTime / 60;
     for (const col of columns) {
       if (!col.spinning) continue;
-      col.speed += (col.targetSpeed - col.speed) * 0.18;
+
+      const acc = col.accel ?? 0.18;
+      col.speed += (col.targetSpeed - col.speed) * acc;
       col.scroll += col.speed * delta;
+
       while (col.scroll >= col.step) {
         col.scroll -= col.step;
         const first = col.cells.shift()!;
@@ -603,7 +606,9 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
         applySymbol(first, randSym());
         col.cells.forEach((cell, idx) => cell.root.position.set(0, idx * col.step));
       }
-      col.rail.y = -BUFFER_ABOVE * col.step + col.scroll;
+
+      const overshoot = Math.exp(-col.speed * 0.12) * Math.sin((col.scroll / col.step) * Math.PI);
+      col.rail.y = -BUFFER_ABOVE * col.step + col.scroll + overshoot * 4;
     }
   };
 
@@ -619,30 +624,41 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
     const col = columns[idx];
     if (!col) return;
 
-    // parar esse rolo
-    col.spinning = false;
-    col.targetSpeed = 0;
-    col.speed = 0;
-    col.scroll = 0;
-    col.rail.y = -BUFFER_ABOVE * col.step;
+    const settleDelay = turboMode ? 80 : 200;
+    const revealDelay = turboMode ? 18 : 40;
+    const delay = settleDelay + idx * (turboMode ? 30 : 70);
 
-    for (let r = 0; r < ROWS; r++) {
-      const sym = symbols[r] ?? randSym();
-      const cell = col.cells[BUFFER_ABOVE + r];
-      applySymbol(cell, sym);
-      cell.stroke?.clear();
-    }
-    for (let i = 0; i < BUFFER_ABOVE; i++) {
-      applySymbol(col.cells[i], randSym());
-    }
-    for (let i = BUFFER_ABOVE + ROWS; i < TOTAL_ROWS; i++) {
-      applySymbol(col.cells[i], randSym());
-    }
-    col.cells.forEach((cell, idx2) => cell.root.position.set(0, idx2 * col.step));
+    setTimeout(() => {
+      col.targetSpeed = turboMode ? 3 : 2;
 
-    fadeTo(col.glow, 0, 1, 120);
-    setTimeout(() => fadeTo(col.glow, 1, 0, 220), 140);
-    bump(col.rail, ticker);
+      const stopDelay = (ROWS * revealDelay) + 80;
+      setTimeout(() => {
+        col.spinning = false;
+        col.speed = 0;
+        col.scroll = 0;
+        col.rail.y = -BUFFER_ABOVE * col.step;
+
+        for (let r = 0; r < ROWS; r++) {
+          setTimeout(() => {
+            const sym = symbols[r] ?? randSym();
+            const cell = col.cells[BUFFER_ABOVE + r];
+            applySymbol(cell, sym);
+            cell.icon.scale.set(1.25);
+            setTimeout(() => cell.icon.scale.set(1), turboMode ? 80 : 160);
+          }, r * revealDelay);
+        }
+
+        setTimeout(() => {
+          for (let i = 0; i < BUFFER_ABOVE; i++) applySymbol(col.cells[i], randSym());
+          for (let i = BUFFER_ABOVE + ROWS; i < TOTAL_ROWS; i++) applySymbol(col.cells[i], randSym());
+          col.cells.forEach((cell, idx2) => cell.root.position.set(0, idx2 * col.step));
+        }, ROWS * revealDelay + 30);
+
+        fadeTo(col.glow, 0, 1, 160);
+        setTimeout(() => fadeTo(col.glow, 1, 0, 260), 200);
+        bump(col.rail, ticker);
+      }, stopDelay);
+    }, delay);
   }
 
   function setSticky(reel: number, row: number, mult: number) {
@@ -672,8 +688,9 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
     ticker.add(fn);
   }
 
+  let hypeLevel = 0;
   function setHype(v: number) {
-    if (hypeText) hypeText.text = `HYPE x${v}`;
+    hypeLevel = v;
   }
 
   function setFsMode(on: boolean) {
@@ -703,24 +720,37 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
 
   let spinTickerAdded = false; // ✅ evita add duplicado
 
-  function startSpin() {
+  function startSpin(opts?: { turbo?: boolean }) {
+    turboMode = opts?.turbo ?? false;
     if (!spinTickerAdded) {
       ticker.add(spinTicker);
       spinTickerAdded = true;
     }
-    for (let i = 0; i < REELS; i++) {
-      const col = columns[i];
-      col.spinning = true;
-      col.speed = 4 + Math.random() * 2;
-      col.targetSpeed = 16 + Math.random() * 5;
+
+    const baseDelay = turboMode ? 60 : 160;
+    const baseTarget = turboMode ? 22 : 16;
+    const baseAcceleration = turboMode ? 0.25 : 0.18;
+
+    columns.forEach((col, idx) => {
+      col.spinning = false;
+      col.speed = 0;
+      col.targetSpeed = baseTarget;
       col.scroll = 0;
-    }
+      col.accel = baseAcceleration;
+
+      const startDelay = idx * baseDelay;
+      setTimeout(() => {
+        col.spinning = true;
+        col.speed = baseTarget * 0.4;
+      }, startDelay);
+    });
 
     let cur = blur.strength;
+    const targetBlur = turboMode ? 1.4 : 1.8;
     const fn = (tk: Ticker) => {
-      cur += 0.25;
-      blur.strength = Math.min(2.2, cur);
-      if (blur.strength >= 2.2) ticker.remove(fn);
+      cur += 0.2;
+      blur.strength = Math.min(targetBlur, cur);
+      if (blur.strength >= targetBlur) ticker.remove(fn);
     };
     ticker.add(fn);
   }
@@ -735,6 +765,66 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
     ticker.add(fn);
   }
 
+  const wayColors = [0xfff28a, 0x7ad1ff, 0xff93d5, 0x9efc79];
+
+  function highlightWays(ways: Array<{ symbol: string; reels: number[] }>) {
+    winOverlay.clear();
+    if (!ways?.length) {
+      fadeTo(winOverlay, winOverlay.alpha, 0, 200);
+      return;
+    }
+
+    winOverlay.alpha = 1;
+    ways.forEach((way, idx) => {
+      const color = wayColors[idx % wayColors.length];
+      const segments: { x: number; y: number }[] = [];
+
+      (way.reels || []).forEach((reelIndex) => {
+        const col = columns[reelIndex - 1];
+        if (!col) return;
+        const visible = col.cells.slice(BUFFER_ABOVE, BUFFER_ABOVE + ROWS);
+        const match = visible.find((cell) => cell.symbol === way.symbol) ?? visible[1];
+        if (!match) return;
+        pulseCell(match);
+        const x = grid.x + col.root.x + colW / 2;
+        const y = grid.y + col.root.y + col.rail.y + match.root.y + rowH / 2;
+        segments.push({ x, y });
+      });
+
+      if (segments.length > 1) {
+        winOverlay.lineStyle(5, color, 0.85);
+        winOverlay.moveTo(segments[0].x, segments[0].y);
+        for (let i = 1; i < segments.length; i++) {
+          winOverlay.lineTo(segments[i].x, segments[i].y);
+        }
+      }
+    });
+
+    setTimeout(() => fadeTo(winOverlay, winOverlay.alpha, 0, 220), turboMode ? 200 : 380);
+  }
+
+  function pulseCell(cell: Cell) {
+    const baseScaleX = cell.icon.scale.x || 1;
+    const baseScaleY = cell.icon.scale.y || 1;
+    let elapsed = 0;
+    const pulse = (tk: Ticker) => {
+      elapsed += tk.deltaTime / 60;
+      const progress = Math.min(1, elapsed / 0.6);
+      const ease = 1 + 0.15 * Math.sin(progress * Math.PI);
+      cell.icon.scale.set(baseScaleX * ease, baseScaleY * ease);
+      if (progress >= 1) {
+        cell.icon.scale.set(baseScaleX, baseScaleY);
+        ticker.remove(pulse);
+      }
+    };
+    ticker.add(pulse);
+
+    const g = cell.stroke!;
+    g.clear();
+    g.roundRect(2, 2, colW - 4, rowH - 4, CELL_R - 4).stroke({ color: 0xfff28a, width: 4 });
+    setTimeout(() => g.clear(), 400);
+  }
+
   return {
     app,
     setColumn,
@@ -746,5 +836,6 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
     flashRespin,
     startSpin,
     endSpin,
+    highlightWays,
   };
 }

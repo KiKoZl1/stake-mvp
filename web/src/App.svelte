@@ -11,6 +11,7 @@
   import emitter from './events/emitter';
 
   import { authenticate, play, endRound, getRgsUrl } from './rgs/client';
+  import { playWinSound, playSpecialSound } from './audio/sfx';
 
   let stage: StageAPI | null = null;
 
@@ -112,11 +113,17 @@ let mascotTimer: number | undefined;
       fsIndex = 0; fsTotal = 0; hype = 0;
       stage?.setFsMode(false);
       stage?.clearRespin();
-      stage?.startSpin();   // ativa rolagem real
+      stage?.startSpin({ turbo });   // ativa rolagem real
     });
 
     emitter.on('reelStop', async (e:any) => {
       stage?.setColumn(e.reel, e.symbols); // para a coluna
+      const specials = (e.symbols || []).filter((s:string) => s?.startsWith('W') || s === 'S' || s === 'H' || s === 'I');
+      specials.forEach((sym:string) => {
+        if (sym.startsWith('W')) playSpecialSound('wild');
+        else if (sym === 'S') playSpecialSound('scatter');
+        else playSpecialSound('high');
+      });
       await sleep(turbo ? 20 : 60);
     });
 
@@ -124,7 +131,9 @@ let mascotTimer: number | undefined;
       const raw = (e.ways ?? []).reduce((acc:number,w:any)=>acc+(w.win??0),0);
       lastWin = raw; totalWin += raw;
       animateTo(v => lastWinDisplay = v, lastWinDisplay, lastWin, turbo?140:220);
+      playWinSound(Math.min(3, (raw / bet)));
       await sleep(turbo ? 80 : 160);
+      stage?.highlightWays(e.ways ?? []);
     });
 
     emitter.on('setTotalWin', (e:any) => { totalWin = e.amount ?? totalWin; });
@@ -276,20 +285,20 @@ let mascotTimer: number | undefined;
     </div>
   </div>
 
-  <Hud
-    {balance} bind:bet bind:mode bind:turbo
-    lastWin={lastWinDisplay}
-    {fsIndex} {fsTotal} {hype}
-    {spinning}
-    autoActive={autoCount !== null}
-    onStopAuto={stopAuto}
-    onSpin={onSpin}
-    onInfo={() => (showIntro = true)}
-    on:openAuto={() => (showAuto = true)}
-    on:openSettings={() => (showSettings = true)}
-    on:openModes={() => (showModes = true)}
-    on:toggleMenu={() => (showQuickPanel = !showQuickPanel)}
-  />
+    <Hud
+      {balance}
+      bind:bet
+      lastWin={lastWinDisplay}
+      {spinning}
+      autoActive={autoCount !== null}
+      onStopAuto={stopAuto}
+      onSpin={onSpin}
+      onInfo={() => (showIntro = true)}
+      on:openAuto={() => (showAuto = true)}
+      on:openSettings={() => (showSettings = true)}
+      on:openModes={() => (showModes = true)}
+      on:toggleMenu={() => (showQuickPanel = !showQuickPanel)}
+    />
 </div>
 
 <Intro open={showIntro} on:start={onStart} />
@@ -314,6 +323,7 @@ let mascotTimer: number | undefined;
     <div
       class="quick-panel"
       role="dialog"
+      aria-modal="true"
       tabindex="-1"
       aria-label="Painel rápido"
       on:click|stopPropagation
@@ -329,6 +339,7 @@ let mascotTimer: number | undefined;
         {turbo ? 'Turbo ON' : 'Turbo OFF'}
       </button>
       <button type="button" on:click={() => { showIntro = true; showQuickPanel = false; }}>Info / Paytable</button>
+      <button type="button" on:click={() => { showModes = true; showQuickPanel = false; }}>Modes</button>
       <div class="divider"></div>
       <div class="toggle-row">
         <span>Master</span>
@@ -344,7 +355,6 @@ let mascotTimer: number | undefined;
         <span>SFX</span>
         <input type="range" min="0" max="1" step="0.05" bind:value={sfx} on:input={e => changeAudio({ detail: { music, sfx, muted } })} />
       </div>
-      <p class="branding">Future Team</p>
     </div>
   </div>
 {/if}
@@ -705,14 +715,6 @@ let mascotTimer: number | undefined;
   border-radius:50%;
   background:#ffec8a;
   box-shadow:0 0 8px rgba(255,255,255,.5);
-}
-.quick-panel .branding{
-  margin:4px 0 0;
-  text-transform:uppercase;
-  letter-spacing:.3em;
-  font-size:.7rem;
-  color:#ffec8a;
-  text-align:center;
 }
 
 @media (max-width: 1100px) {

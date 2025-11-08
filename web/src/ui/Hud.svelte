@@ -1,16 +1,9 @@
-<script lang="ts">
+﻿<script lang="ts">
   import { createEventDispatcher } from 'svelte';
 
   export let balance = 0;
   export let bet = 1_000_000;
-  export let mode: string = 'base';
-  export let turbo = false;
   export let lastWin = 0;
-
-  export let fsIndex = 0;
-  export let fsTotal = 0;
-  export let hype = 0;
-
   export let spinning = false;
   export let autoActive = false;
   export let onStopAuto: (() => void) | null = null;
@@ -24,25 +17,35 @@
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
-  const modeLabel = (m: string) => m.replace(/_/g, ' ').toUpperCase();
 
-  function spin() {
-    onSpin?.();
+  const STEP_SMALL = 1_000_000;
+  const STEP_BIG = 10_000_000;
+
+  function adjustSmall(dir: number) {
+    bet = Math.max(STEP_SMALL, bet + dir * STEP_SMALL);
   }
-  function info() {
-    onInfo?.();
+
+  function adjustBig(dir: number) {
+    bet = Math.max(STEP_SMALL, bet + dir * STEP_BIG);
   }
-  function stopAuto() {
-    onStopAuto?.();
-  }
-  function toggleMenu() {
-    dispatch('toggleMenu');
+
+  function spin() { onSpin?.(); }
+  function info() { onInfo?.(); }
+  function stopAuto() { onStopAuto?.(); }
+  function toggleMenu() { dispatch('toggleMenu'); }
+  function openAuto() { autoActive ? stopAuto() : dispatch('openAuto'); }
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+    } else {
+      document.exitFullscreen?.();
+    }
   }
 </script>
 
 <div class="hud" role="region" aria-label="Painel de controle do slot">
   <div class="panel">
-    <button class="menu" type="button" on:click={toggleMenu} aria-label="Abrir painel lateral">☰</button>
+    <button class="menu" type="button" aria-label="Abrir painel lateral" on:click={toggleMenu}>☰</button>
 
     <div class="stat">
       <span>Balance</span>
@@ -57,15 +60,15 @@
     <div class="stat bet">
       <span>Bet</span>
       <div class="betbox" role="group" aria-label="Ajustar aposta">
-        <button type="button" on:click={() => (bet = Math.max(1_000_000, bet - 1_000_000))} disabled={spinning} aria-label="Diminuir aposta">−</button>
+        <button type="button" on:click={() => adjustSmall(-1)} disabled={spinning} aria-label="Diminuir aposta">−</button>
         <output aria-live="polite">{pretty(bet)}</output>
-        <button type="button" on:click={() => (bet = bet + 1_000_000)} disabled={spinning} aria-label="Aumentar aposta">+</button>
+        <button type="button" on:click={() => adjustSmall(1)} disabled={spinning} aria-label="Aumentar aposta">+</button>
       </div>
     </div>
 
     <div class="stepper" aria-label="Ajuste rápido de aposta">
-      <button type="button" on:click={() => (bet = bet + 1_000_000)} disabled={spinning} aria-label="Aumentar aposta rápido">▲</button>
-      <button type="button" on:click={() => (bet = Math.max(1_000_000, bet - 1_000_000))} disabled={spinning} aria-label="Diminuir aposta rápido">▼</button>
+      <button type="button" on:click={() => adjustBig(1)} disabled={spinning} aria-label="Aumentar aposta em 10">▲</button>
+      <button type="button" on:click={() => adjustBig(-1)} disabled={spinning} aria-label="Diminuir aposta em 10">▼</button>
     </div>
 
     <button class="spin" type="button" on:click={spin} disabled={spinning}>
@@ -73,31 +76,18 @@
       <small>{spinning ? 'Rolling...' : 'Fire!'}</small>
     </button>
 
-    <div class="status-pills">
-      <div class="pill">
-        <span>FS</span>
-        <strong>{fsIndex}/{fsTotal}</strong>
-      </div>
-      <div class="pill">
-        <span>Hype</span>
-        <strong>x{hype}</strong>
-      </div>
-      <div class="pill">
-        <span>Mode</span>
-        <strong>{modeLabel(mode)}</strong>
-      </div>
-    </div>
+    <button
+      class="action auto"
+      type="button"
+      aria-pressed={autoActive}
+      class:auto-on={autoActive}
+      on:click={openAuto}
+      aria-label={autoActive ? 'Parar auto spin' : 'Abrir auto spin'}
+    >⟳</button>
 
-    <div class="icon-group" role="group" aria-label="Ações extras">
-      <button type="button" class:active={turbo} aria-pressed={turbo} on:click={() => (turbo = !turbo)}>Turbo</button>
-      <button type="button" on:click={() => dispatch('openAuto')}>Auto</button>
-      <button type="button" on:click={() => dispatch('openModes')}>Modes</button>
-      <button type="button" on:click={info}>Info</button>
-      <button type="button" on:click={() => dispatch('openSettings')}>⚙</button>
-      {#if autoActive}
-        <button type="button" class="stop" on:click={stopAuto}>Stop</button>
-      {/if}
-    </div>
+    <button class="action fullscreen" type="button" on:click={toggleFullscreen} aria-label="Alternar tela cheia">⤢</button>
+
+    <button class="action info" type="button" on:click={info} aria-label="Info e paytable">i</button>
   </div>
 </div>
 
@@ -192,55 +182,24 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 2px;
   }
   .spin small {
     font-size: 0.7rem;
     letter-spacing: 0.08em;
   }
-  .status-pills {
-    display: flex;
-    gap: 10px;
-  }
-  .pill {
-    width: 120px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
-    padding: 6px 10px;
-    text-align: center;
-  }
-  .pill span {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    opacity: 0.7;
-  }
-  .pill strong {
-    display: block;
-    font-weight: 800;
-  }
-  .icon-group {
-    margin-left: auto;
-    display: flex;
-    gap: 10px;
-  }
-  .icon-group button {
-    padding: 10px 14px;
-    border-radius: 12px;
+  .action {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.2);
     background: rgba(255, 255, 255, 0.06);
     color: #fff;
-    font-weight: 600;
+    font-size: 1.2rem;
   }
-  .icon-group button.active {
+  .auto-on {
     background: linear-gradient(120deg, #ffec8a, #ff8f3b);
     color: #1c0f04;
     border: none;
-  }
-  .stop {
-    background: linear-gradient(120deg, #ff4d4d, #b4001a);
-    border: none;
-    color: #fff;
   }
   button {
     font-family: inherit;
@@ -252,14 +211,7 @@
   }
   @media (max-width: 1100px) {
     .panel {
-      flex-wrap: wrap;
       justify-content: center;
-    }
-    .icon-group {
-      width: 100%;
-      justify-content: center;
-      margin-left: 0;
     }
   }
 </style>
-

@@ -8,11 +8,6 @@ const meta = {
     balance: 125_000_000,
     bet: 2_000_000,
     lastWin: 18_500_000,
-    mode: 'base',
-    turbo: false,
-    fsIndex: 0,
-    fsTotal: 0,
-    hype: 3,
     spinning: false,
     autoActive: false,
     onSpin: () => {},
@@ -29,8 +24,6 @@ export const Default: Story = {};
 export const WithAuto: Story = {
   args: {
     autoActive: true,
-    fsIndex: 4,
-    fsTotal: 12,
-    hype: 6
+    spinning: true
   }
 };
