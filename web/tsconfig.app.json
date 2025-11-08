@@ -4,14 +4,101 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["svelte", "vite/client", "node"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "types": [
+      "svelte",
+      "vite/client",
+      "node"
+    ],
     "strict": true,
     "resolveJsonModule": true,
     "allowJs": true,
     "checkJs": false,
     "noEmit": false,
-    "useDefineForClassFields": true
+    "useDefineForClassFields": true,
+    "baseUrl": ".",
+    "paths": {
+      "components-layout": [
+        "../packages/components-layout/index.ts"
+      ],
+      "components-pixi": [
+        "../packages/components-pixi/index.ts"
+      ],
+      "components-shared": [
+        "../packages/components-shared/index.ts"
+      ],
+      "components-storybook": [
+        "../packages/components-storybook/index.ts"
+      ],
+      "components-ui-html": [
+        "../packages/components-ui-html/index.ts"
+      ],
+      "components-ui-pixi": [
+        "../packages/components-ui-pixi/index.ts"
+      ],
+      "constants-shared": [
+        "../packages/constants-shared/index.ts"
+      ],
+      "envs": [
+        "../packages/envs/index.ts"
+      ],
+      "pixi-svelte": [
+        "../packages/pixi-svelte/index.ts"
+      ],
+      "pixi-svelte-storybook": [
+        "../packages/pixi-svelte-storybook/index.ts"
+      ],
+      "rgs-fetcher": [
+        "../packages/rgs-fetcher/index.ts"
+      ],
+      "rgs-requests": [
+        "../packages/rgs-requests/index.ts"
+      ],
+      "state-shared": [
+        "../packages/state-shared/index.ts"
+      ],
+      "utils-bet": [
+        "../packages/utils-bet/index.ts"
+      ],
+      "utils-book": [
+        "../packages/utils-book/index.ts"
+      ],
+      "utils-event-emitter": [
+        "../packages/utils-event-emitter/index.ts"
+      ],
+      "utils-fetcher": [
+        "../packages/utils-fetcher/index.ts"
+      ],
+      "utils-layout": [
+        "../packages/utils-layout/index.ts"
+      ],
+      "utils-resize-observer": [
+        "../packages/utils-resize-observer/index.ts"
+      ],
+      "utils-shared": [
+        "../packages/utils-shared/index.ts"
+      ],
+      "utils-slots": [
+        "../packages/utils-slots/index.ts"
+      ],
+      "utils-sound": [
+        "../packages/utils-sound/index.ts"
+      ],
+      "utils-xstate": [
+        "../packages/utils-xstate/index.ts"
+      ],
+      "$env/static/public": [
+        "src/env/public.ts"
+      ]
+    }
   },
-  "include": ["src/**/*.ts", "src/**/*.svelte", "src/**/*.d.ts"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.svelte",
+    "src/**/*.d.ts"
+  ]
 }
