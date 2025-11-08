@@ -35,6 +35,7 @@ let showIntro = true;
 let showSettings = false;
 let showAuto = false;
 let showModes = false;
+let showQuickPanel = false;
 
   let music = 0.6, sfx = 0.9, muted = false;
 
@@ -227,6 +228,7 @@ let mascotTimer: number | undefined;
 
   function onMode(e:any){ mode = e.detail.mode; showModes = false; }
   async function onBuy(e:any){ mode = e.detail.mode; showModes = false; if (!spinning) await onSpin(); }
+  function closeQuick(){ showQuickPanel = false; }
 </script>
 
 <div class="bg">
@@ -234,66 +236,118 @@ let mascotTimer: number | undefined;
   <div class="bg-stripes"></div>
 </div>
 
-<div class="scene">
-  <div class="hero-column">
-    <div class={`mascot ${mascotMood}`}>
-      <div class="mascot-glow"></div>
-      <div class="mascot-figure">
-        <div class="mascot-head">
-          <div class="hair"></div>
-          <div class="eyes"></div>
-          <div class="mouth"></div>
+<div class="slot-layout">
+  <div class="scene-frame">
+    <div class="mascot-column">
+      <div class={`mascot ${mascotMood}`}>
+        <div class="mascot-glow"></div>
+        <div class="mascot-figure">
+          <div class="mascot-head">
+            <div class="hair"></div>
+            <div class="eyes"></div>
+            <div class="mouth"></div>
+          </div>
+          <div class="mascot-body">
+            <div class="suit"></div>
+            <div class="tie"></div>
+            <div class="flag-pin"></div>
+          </div>
+          <div class="mascot-prop"></div>
         </div>
-        <div class="mascot-body">
-          <div class="suit"></div>
-          <div class="tie"></div>
-          <div class="flag-pin"></div>
-        </div>
-        <div class="mascot-prop"></div>
+        <div class="mascot-caption">{mascotCaption[mascotMood]}</div>
       </div>
-      <div class="mascot-caption">{mascotCaption[mascotMood]}</div>
+      <div class="hero-card">
+        <h3>'Merica: Brainrot Bonanza</h3>
+        <p>243 ways + Sticky Wilds + Hype Meter + Bonus Buys.</p>
+        <p class="badge">RTP alvo 96.67% | Top win 5,000x</p>
+      </div>
     </div>
 
-    <div class="hero-card">
-      <h3>'Merica: Brainrot Bonanza</h3>
-      <p>243 ways + Sticky Wilds + Hype Meter + Bonus Buys.</p>
-      <p class="badge">RTP alvo 96.67% | Top win 5,000x</p>
+    <div class="reels-column">
+      <div class="stage-shell">
+        <div class="stage-frame"></div>
+        <div class="stage-holder">
+          <div class="stage-shine"></div>
+          <div class="stage-vignette"></div>
+          <div bind:this={viewEl} class="stage"></div>
+        </div>
+        <div class="stage-bottom-light"></div>
+      </div>
     </div>
   </div>
 
-  <div class="game-column">
-    <div class="stage-shell">
-      <div class="stage-frame"></div>
-      <div class="stage-holder">
-        <div class="stage-shine"></div>
-        <div class="stage-vignette"></div>
-        <div bind:this={viewEl} class="stage"></div>
-      </div>
-      <div class="stage-bottom-light"></div>
-    </div>
-
-    <div class="hud-slot">
-      <Hud
-        {balance} bind:bet bind:mode bind:turbo
-        lastWin={lastWinDisplay}
-        {fsIndex} {fsTotal} {hype}
-        {spinning}
-        autoActive={autoCount !== null}
-        onStopAuto={stopAuto}
-        onSpin={onSpin}
-        onInfo={() => (showIntro = true)}
-        on:openAuto={() => (showAuto = true)}
-        on:openSettings={() => (showSettings = true)}
-        on:openModes={() => (showModes = true)}
-      />
-    </div>
-  </div>
+  <Hud
+    {balance} bind:bet bind:mode bind:turbo
+    lastWin={lastWinDisplay}
+    {fsIndex} {fsTotal} {hype}
+    {spinning}
+    autoActive={autoCount !== null}
+    onStopAuto={stopAuto}
+    onSpin={onSpin}
+    onInfo={() => (showIntro = true)}
+    on:openAuto={() => (showAuto = true)}
+    on:openSettings={() => (showSettings = true)}
+    on:openModes={() => (showModes = true)}
+    on:toggleMenu={() => (showQuickPanel = !showQuickPanel)}
+  />
 </div>
 
 <Intro open={showIntro} on:start={onStart} />
 <Settings open={showSettings} {music} {sfx} {muted} on:change={changeAudio} on:close={() => (showSettings = false)} />
 <Autoplay open={showAuto} on:apply={applyAuto} on:close={() => (showAuto = false)} />
 <ModePanel open={showModes} on:mode={onMode} on:buy={onBuy} on:close={() => (showModes = false)} />
+
+{#if showQuickPanel}
+  <div
+    class="quick-scrim"
+    role="button"
+    tabindex="0"
+    aria-label="Fechar painel rápido"
+    on:click={closeQuick}
+    on:keydown={(e) => {
+      if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        closeQuick();
+      }
+    }}
+  >
+    <div
+      class="quick-panel"
+      role="dialog"
+      tabindex="-1"
+      aria-label="Painel rápido"
+      on:click|stopPropagation
+      on:keydown={(e) => {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          closeQuick();
+        }
+      }}
+    >
+      <button type="button" on:click={() => { showSettings = true; showQuickPanel = false; }}>Settings</button>
+      <button type="button" class:active={turbo} on:click={() => (turbo = !turbo)}>
+        {turbo ? 'Turbo ON' : 'Turbo OFF'}
+      </button>
+      <button type="button" on:click={() => { showIntro = true; showQuickPanel = false; }}>Info / Paytable</button>
+      <div class="divider"></div>
+      <div class="toggle-row">
+        <span>Master</span>
+        <button type="button" on:click={() => { muted = !muted; changeAudio({ detail: { music, sfx, muted } }); }}>
+          {muted ? 'Muted' : 'Sound On'}
+        </button>
+      </div>
+      <div class="toggle-row">
+        <span>Music</span>
+        <input type="range" min="0" max="1" step="0.05" bind:value={music} on:input={e => changeAudio({ detail: { music, sfx, muted } })} />
+      </div>
+      <div class="toggle-row">
+        <span>SFX</span>
+        <input type="range" min="0" max="1" step="0.05" bind:value={sfx} on:input={e => changeAudio({ detail: { music, sfx, muted } })} />
+      </div>
+      <p class="branding">Future Team</p>
+    </div>
+  </div>
+{/if}
 
 <style>
 .bg{
@@ -341,24 +395,36 @@ let mascotTimer: number | undefined;
   100%{background-position:320px 0;}
 }
 
-.scene{
+.slot-layout{
   position:relative;
-  min-height:100vh;
+  width:min(1440px,92vw);
+  margin:0 auto;
+  padding:40px clamp(20px,4vw,48px) 24px;
   display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:clamp(24px,4vw,60px);
-  padding:clamp(20px,4vw,60px);
+  flex-direction:column;
+  gap:28px;
   z-index:1;
-  flex-wrap:wrap;
 }
-
-.hero-column{
-  width:min(320px,30vw);
+.scene-frame{
+  display:flex;
+  gap:32px;
+  align-items:flex-end;
+  justify-content:center;
+}
+.mascot-column{
+  width:200px;
+  min-height:560px;
   display:flex;
   flex-direction:column;
   gap:18px;
   color:#fff;
+}
+.reels-column{
+  flex:1;
+  min-width:0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
 }
 
 .mascot{
@@ -525,20 +591,10 @@ let mascotTimer: number | undefined;
   letter-spacing:.04em;
 }
 
-.game-column{
-  position:relative;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:28px;
-  width:min(92vw,1280px);
-  padding-bottom:40px;
-}
-
 .stage-shell{
   position:relative;
-  width:100%;
-  aspect-ratio:16/9;
+  width:min(960px,65vw);
+  height:min(560px,60vh);
   border-radius:32px;
   padding:clamp(12px,2vw,28px);
   background:linear-gradient(180deg,#42220c,#1d0c05 65%,#0c0804);
@@ -589,29 +645,107 @@ let mascotTimer: number | undefined;
   height:100%;
 }
 
-.hud-slot{
-  width:100%;
+.quick-scrim{
+  position:absolute;
+  inset:0;
+  pointer-events:auto;
+}
+.quick-panel{
+  position:absolute;
+  left:40px;
+  top:180px;
+  width:280px;
+  padding:20px;
+  background:rgba(10,12,22,.94);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:20px;
+  box-shadow:0 18px 60px rgba(0,0,0,.6);
   display:flex;
-  justify-content:center;
-  margin-top:-36px;
-  position:relative;
-  z-index:5;
+  flex-direction:column;
+  gap:12px;
+  z-index:10;
+  pointer-events:auto;
+}
+.quick-panel button{
+  height:48px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.15);
+  background:rgba(255,255,255,.06);
+  color:#fff;
+  font-weight:700;
+}
+.quick-panel button.active{
+  background:linear-gradient(120deg,#ffec8a,#ff8f3b);
+  color:#1b0f04;
+  border:none;
+}
+.quick-panel .divider{
+  height:1px;
+  background:rgba(255,255,255,.12);
+  margin:6px 0;
+}
+.quick-panel .toggle-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  color:#fff;
+  font-size:.9rem;
+}
+.quick-panel input[type="range"]{
+  flex:1;
+  appearance:none;
+  height:6px;
+  border-radius:999px;
+  background:rgba(255,255,255,.2);
+}
+.quick-panel input[type="range"]::-webkit-slider-thumb{
+  appearance:none;
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  background:#ffec8a;
+  box-shadow:0 0 8px rgba(255,255,255,.5);
+}
+.quick-panel .branding{
+  margin:4px 0 0;
+  text-transform:uppercase;
+  letter-spacing:.3em;
+  font-size:.7rem;
+  color:#ffec8a;
+  text-align:center;
 }
 
 @media (max-width: 1100px) {
-  .scene{
+  .scene-frame{
     flex-direction:column;
+    align-items:center;
   }
-  .hero-column{
+  .mascot-column{
     width:100%;
     max-width:520px;
     flex-direction:row;
+    justify-content:center;
   }
   .mascot{
     flex:1;
   }
   .hero-card{
     flex:1;
+  }
+  .quick-panel{
+    position:fixed;
+    left:20px;
+    top:120px;
+  }
+}
+
+@media (max-width: 900px){
+  .scene-frame{
+    gap:16px;
+  }
+  .stage-shell{
+    width:100%;
+    height:55vh;
   }
 }
 </style>

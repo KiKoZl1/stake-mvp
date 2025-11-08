@@ -35,97 +35,69 @@
   function stopAuto() {
     onStopAuto?.();
   }
+  function toggleMenu() {
+    dispatch('toggleMenu');
+  }
 </script>
 
 <div class="hud" role="region" aria-label="Painel de controle do slot">
   <div class="panel">
-    <section class="segment stats" aria-label="Informações de aposta">
-      <div class="stat-card">
-        <span class="label">Balance</span>
-        <output class="value" aria-live="polite">{pretty(balance)}</output>
-      </div>
-      <div class="stat-card bet">
-        <span class="label">Bet</span>
-        <div class="betbox" role="group" aria-label="Ajustar aposta">
-          <button
-            type="button"
-            class="chip"
-            on:click={() => (bet = Math.max(1_000_000, bet - 1_000_000))}
-            disabled={spinning}
-            aria-label="Diminuir aposta"
-          >
-            −
-          </button>
-          <output class="value" aria-live="polite">{pretty(bet)}</output>
-          <button
-            type="button"
-            class="chip"
-            on:click={() => (bet = bet + 1_000_000)}
-            disabled={spinning}
-            aria-label="Aumentar aposta"
-          >
-            +
-          </button>
-        </div>
-      </div>
-      <div class="stat-card">
-        <span class="label">Win</span>
-        <output class="value" aria-live="polite">{pretty(lastWin)}</output>
-      </div>
-    </section>
+    <button class="menu" type="button" on:click={toggleMenu} aria-label="Abrir painel lateral">☰</button>
 
-    <section class="segment actions" aria-label="Ações principais">
-      <div class="mode-pill">
+    <div class="stat">
+      <span>Balance</span>
+      <output aria-live="polite">{pretty(balance)}</output>
+    </div>
+
+    <div class="stat">
+      <span>Win</span>
+      <output aria-live="polite">{pretty(lastWin)}</output>
+    </div>
+
+    <div class="stat bet">
+      <span>Bet</span>
+      <div class="betbox" role="group" aria-label="Ajustar aposta">
+        <button type="button" on:click={() => (bet = Math.max(1_000_000, bet - 1_000_000))} disabled={spinning} aria-label="Diminuir aposta">−</button>
+        <output aria-live="polite">{pretty(bet)}</output>
+        <button type="button" on:click={() => (bet = bet + 1_000_000)} disabled={spinning} aria-label="Aumentar aposta">+</button>
+      </div>
+    </div>
+
+    <div class="stepper" aria-label="Ajuste rápido de aposta">
+      <button type="button" on:click={() => (bet = bet + 1_000_000)} disabled={spinning} aria-label="Aumentar aposta rápido">▲</button>
+      <button type="button" on:click={() => (bet = Math.max(1_000_000, bet - 1_000_000))} disabled={spinning} aria-label="Diminuir aposta rápido">▼</button>
+    </div>
+
+    <button class="spin" type="button" on:click={spin} disabled={spinning}>
+      <span>Spin</span>
+      <small>{spinning ? 'Rolling...' : 'Fire!'}</small>
+    </button>
+
+    <div class="status-pills">
+      <div class="pill">
+        <span>FS</span>
+        <strong>{fsIndex}/{fsTotal}</strong>
+      </div>
+      <div class="pill">
+        <span>Hype</span>
+        <strong>x{hype}</strong>
+      </div>
+      <div class="pill">
         <span>Mode</span>
         <strong>{modeLabel(mode)}</strong>
       </div>
-      <div class="spin-stack">
-        <button class="spin" type="button" on:click={spin} disabled={spinning}>
-          <span>SPIN</span>
-          <small>{spinning ? 'Rolling...' : 'Fire the cannons'}</small>
-        </button>
-        <div class="quick">
-          <button type="button" class="ghost" on:click={() => dispatch('openAuto')} aria-label="Abrir autoplay">
-            Auto
-          </button>
-          <button type="button" class="ghost" on:click={() => dispatch('openModes')} aria-label="Abrir modos e bonus buys">
-            Modes
-          </button>
-        </div>
-      </div>
-      <div class="toggles">
-        <label class="toggle" for="turbo">
-          <input id="turbo" type="checkbox" bind:checked={turbo} disabled={spinning} />
-          <span>Turbo</span>
-        </label>
-        {#if autoActive}
-          <button class="stop" type="button" on:click={stopAuto} aria-label="Parar autoplay imediatamente">
-            Stop Auto
-          </button>
-        {/if}
-      </div>
-    </section>
+    </div>
 
-    <section class="segment meta" aria-label="Status extra e menus">
-      <div class="badge-grid" aria-live="polite">
-        <div class="badge">
-          <span>FS</span>
-          <strong>{fsIndex}/{fsTotal}</strong>
-        </div>
-        <div class="badge">
-          <span>Hype</span>
-          <strong>x{hype}</strong>
-        </div>
-      </div>
-      <div class="menu-buttons" role="group" aria-label="Menus">
-        <button type="button" class="icon" on:click={info} aria-label="Info e Paytable">
-          i
-        </button>
-        <button type="button" class="icon" on:click={() => dispatch('openSettings')} aria-label="Configurações">
-          ⚙
-        </button>
-      </div>
-    </section>
+    <div class="icon-group" role="group" aria-label="Ações extras">
+      <button type="button" class:active={turbo} aria-pressed={turbo} on:click={() => (turbo = !turbo)}>Turbo</button>
+      <button type="button" on:click={() => dispatch('openAuto')}>Auto</button>
+      <button type="button" on:click={() => dispatch('openModes')}>Modes</button>
+      <button type="button" on:click={info}>Info</button>
+      <button type="button" on:click={() => dispatch('openSettings')}>⚙</button>
+      {#if autoActive}
+        <button type="button" class="stop" on:click={stopAuto}>Stop</button>
+      {/if}
+    </div>
   </div>
 </div>
 
@@ -134,200 +106,160 @@
     width: 100%;
     display: flex;
     justify-content: center;
-    padding: 0 clamp(12px, 3vw, 28px);
     pointer-events: none;
   }
   .panel {
     pointer-events: auto;
-    display: flex;
-    gap: 14px;
-    background: rgba(5, 7, 14, 0.9);
+    width: 100%;
+    max-width: 1400px;
+    background: rgba(5, 7, 14, 0.92);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 20px;
-    padding: 14px clamp(16px, 3vw, 26px);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
-    flex-wrap: wrap;
-    max-width: 760px;
-  }
-  .segment {
+    border-radius: 24px;
+    padding: 18px clamp(16px, 4vw, 32px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
     display: flex;
     align-items: center;
-    gap: 16px;
-    flex: 1;
-    min-width: 200px;
+    gap: 18px;
+    flex-wrap: wrap;
   }
-  .segment.stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 12px;
+  .menu {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+    font-size: 1.4rem;
   }
-  .segment.actions {
-    justify-content: center;
-    flex-direction: column;
-    text-align: center;
-    padding: 0 12px;
-  }
-  .segment.meta {
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 10px;
-  }
-  .stat-card {
+  .stat {
+    width: 180px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 16px;
-    padding: 10px 14px;
-    min-width: 0;
-  }
-.stat-card .label {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  opacity: 0.7;
-  letter-spacing: 0.05em;
-}
-.stat-card .value {
-  display: block;
-  font-weight: 800;
-  font-size: 1.1rem;
-}
-.bet .betbox {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 6px;
-}
-.chip {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-  font-size: 1rem;
-}
-.mode-pill {
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  color: #fff;
-  padding: 8px 18px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: linear-gradient(120deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.01));
-}
-.mode-pill strong {
-  display: block;
-  font-size: 1.1rem;
-  letter-spacing: 0.05em;
-}
-.spin-stack {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-  .spin {
-    width: 150px;
-    height: 60px;
-    border-radius: 999px;
-    border: none;
-    background: radial-gradient(circle at 20% 20%, #ffec8a, #ff6b3b);
-    color: #1c0f05;
-    font-size: 1.4rem;
-    font-weight: 800;
-    box-shadow: 0 8px 22px rgba(255, 123, 0, 0.32);
-  }
-.spin small {
-  display: block;
-  font-size: 0.65rem;
-  letter-spacing: 0.08em;
-}
-  .quick {
+    padding: 8px 12px;
     display: flex;
-    gap: 10px;
-  }
-.ghost {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
-  padding: 8px 16px;
-  font-weight: 700;
-  color: #fff;
-}
-.toggles {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-.toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 999px;
-  padding: 6px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  cursor: pointer;
-}
-.toggle input {
-  accent-color: #ffcf4b;
-}
-.stop {
-  background: linear-gradient(120deg, #ff4d4d, #b4001a);
-  border: none;
-  color: #fff;
-  border-radius: 16px;
-  padding: 10px 18px;
-  font-weight: 800;
-}
-  .badge-grid {
-    display: flex;
-    gap: 10px;
-  }
-.badge {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  padding: 8px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-.badge span {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  opacity: 0.7;
-}
-.badge strong {
-  display: block;
-  font-size: 1.1rem;
-}
-.menu-buttons {
-  display: flex;
-  gap: 10px;
-}
-.icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.08);
-  font-size: 1rem;
-  color: #fff;
-}
-button {
-  font-family: inherit;
-  cursor: pointer;
-}
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-@media (max-width: 900px) {
-  .panel {
     flex-direction: column;
+    gap: 4px;
   }
-  .segment.meta {
-    align-items: flex-start;
+  .stat span {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    opacity: 0.7;
+    letter-spacing: 0.05em;
   }
-}
+  .stat output {
+    font-weight: 800;
+    font-size: 1.15rem;
+  }
+  .bet .betbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .bet .betbox button {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-weight: 700;
+  }
+  .stepper {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .stepper button {
+    width: 48px;
+    height: 24px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+  }
+  .spin {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: none;
+    background: radial-gradient(circle at 30% 20%, #fff1a0, #ff7c38);
+    color: #1c0f05;
+    font-size: 1.3rem;
+    font-weight: 800;
+    box-shadow: 0 14px 30px rgba(255, 123, 0, 0.35);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 2px;
+  }
+  .spin small {
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+  }
+  .status-pills {
+    display: flex;
+    gap: 10px;
+  }
+  .pill {
+    width: 120px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 6px 10px;
+    text-align: center;
+  }
+  .pill span {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+  .pill strong {
+    display: block;
+    font-weight: 800;
+  }
+  .icon-group {
+    margin-left: auto;
+    display: flex;
+    gap: 10px;
+  }
+  .icon-group button {
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+    font-weight: 600;
+  }
+  .icon-group button.active {
+    background: linear-gradient(120deg, #ffec8a, #ff8f3b);
+    color: #1c0f04;
+    border: none;
+  }
+  .stop {
+    background: linear-gradient(120deg, #ff4d4d, #b4001a);
+    border: none;
+    color: #fff;
+  }
+  button {
+    font-family: inherit;
+    cursor: pointer;
+  }
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  @media (max-width: 1100px) {
+    .panel {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .icon-group {
+      width: 100%;
+      justify-content: center;
+      margin-left: 0;
+    }
+  }
 </style>
+
