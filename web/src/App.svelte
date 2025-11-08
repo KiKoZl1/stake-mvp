@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
 
   import Intro from './ui/Intro.svelte';
   import Settings from './ui/Settings.svelte';
@@ -29,17 +29,21 @@
   let fsTotal = 0;
   let hype = 0;
 
-  let showIntro = true;
-  let showSettings = false;
-  let showAuto = false;
-  let showModes = false;
+type MascotMood = 'idle' | 'spin' | 'celebrate' | 'sad';
+
+let showIntro = true;
+let showSettings = false;
+let showAuto = false;
+let showModes = false;
 
   let music = 0.6, sfx = 0.9, muted = false;
 
   let autoCount: number | null = null;
   let autoRules = { stopOnBonus: true, stopOnWinAbove: 0, stopOnBalanceBelow: 0 };
 
-  let viewEl: HTMLDivElement;
+let viewEl: HTMLDivElement;
+let mascotMood: MascotMood = 'idle';
+let mascotTimer: ReturnType<typeof setTimeout> | null = null;
 
   const sleep = (ms:number)=> new Promise(r=>setTimeout(r,ms));
 
@@ -74,9 +78,35 @@
     };
   });
 
+  onDestroy(() => {
+    if (mascotTimer) clearTimeout(mascotTimer);
+  });
+
+  function setMascotMood(mood: MascotMood, backToIdleAfter = 0) {
+    mascotMood = mood;
+    if (mascotTimer) {
+      clearTimeout(mascotTimer);
+      mascotTimer = null;
+    }
+    if (backToIdleAfter > 0) {
+      mascotTimer = window.setTimeout(() => {
+        mascotMood = 'idle';
+        mascotTimer = null;
+      }, backToIdleAfter);
+    }
+  }
+
+  const mascotCaption: Record<MascotMood, string> = {
+    idle: 'Make those reels pay!',
+    spin: 'Launching freedom spin...',
+    celebrate: 'USA! USA! JACKPOT!',
+    sad: 'We go again, soldier.'
+  };
+
   function wireEvents() {
     emitter.on('spinStart', () => {
       spinning = true;
+      setMascotMood('spin');
       totalWin = 0; lastWin = 0; lastWinDisplay = 0;
       fsIndex = 0; fsTotal = 0; hype = 0;
       stage?.setFsMode(false);
@@ -119,6 +149,7 @@
       }
       spinning = false;
       stage?.endSpin();
+      setMascotMood(totalWin > 0 ? 'celebrate' : 'sad', 2600);
 
       // autoplay loop
       if (autoCount !== null) {
@@ -198,30 +229,65 @@
   async function onBuy(e:any){ mode = e.detail.mode; showModes = false; if (!spinning) await onSpin(); }
 </script>
 
-<div class="bg"></div>
+<div class="bg">
+  <div class="bg-stars"></div>
+  <div class="bg-stripes"></div>
+</div>
 
-<div class="wrap">
-  <div class="left-mask">
-    <div class="mascot"><div class="face">🦅</div></div>
+<div class="scene">
+  <div class="hero-column">
+    <div class={`mascot ${mascotMood}`}>
+      <div class="mascot-glow"></div>
+      <div class="mascot-figure">
+        <div class="mascot-head">
+          <div class="hair"></div>
+          <div class="eyes"></div>
+          <div class="mouth"></div>
+        </div>
+        <div class="mascot-body">
+          <div class="suit"></div>
+          <div class="tie"></div>
+          <div class="flag-pin"></div>
+        </div>
+        <div class="mascot-prop"></div>
+      </div>
+      <div class="mascot-caption">{mascotCaption[mascotMood]}</div>
+    </div>
+
+    <div class="hero-card">
+      <h3>'Merica: Brainrot Bonanza</h3>
+      <p>243 ways + Sticky Wilds + Hype Meter + Bonus Buys.</p>
+      <p class="badge">RTP alvo 96.67% | Top win 5,000x</p>
+    </div>
   </div>
 
-  <div class="stage-holder">
-    <div bind:this={viewEl} class="stage"></div>
-  </div>
+  <div class="game-column">
+    <div class="stage-shell">
+      <div class="stage-frame"></div>
+      <div class="stage-holder">
+        <div class="stage-shine"></div>
+        <div class="stage-vignette"></div>
+        <div bind:this={viewEl} class="stage"></div>
+      </div>
+      <div class="stage-bottom-light"></div>
+    </div>
 
-  <Hud
-    {balance} bind:bet bind:mode bind:turbo
-    lastWin={lastWinDisplay}
-    {fsIndex} {fsTotal} {hype}
-    {spinning}
-    autoActive={autoCount !== null}
-    onStopAuto={stopAuto}
-    onSpin={onSpin}
-    onInfo={() => (showIntro = true)}
-    on:openAuto={() => (showAuto = true)}
-    on:openSettings={() => (showSettings = true)}
-    on:openModes={() => (showModes = true)}
-  />
+    <div class="hud-slot">
+      <Hud
+        {balance} bind:bet bind:mode bind:turbo
+        lastWin={lastWinDisplay}
+        {fsIndex} {fsTotal} {hype}
+        {spinning}
+        autoActive={autoCount !== null}
+        onStopAuto={stopAuto}
+        onSpin={onSpin}
+        onInfo={() => (showIntro = true)}
+        on:openAuto={() => (showAuto = true)}
+        on:openSettings={() => (showSettings = true)}
+        on:openModes={() => (showModes = true)}
+      />
+    </div>
+  </div>
 </div>
 
 <Intro open={showIntro} on:start={onStart} />
@@ -231,48 +297,321 @@
 
 <style>
 .bg{
-  position:fixed; inset:0;
-  background:
-    radial-gradient(80% 60% at 50% 40%, rgba(255,255,255,.05), transparent 60%),
-    repeating-linear-gradient(45deg, rgba(255,255,255,.02) 0 8px, transparent 8px 16px),
-    linear-gradient(180deg, #101318, #0b0c10 60%, #0a0a0a);
-  animation: bgmove 18s linear infinite;
+  position:fixed;
+  inset:0;
+  overflow:hidden;
+  background:linear-gradient(180deg,#0a1424,#080b10 70%,#050608);
 }
-@keyframes bgmove{
-  0%{ background-position: 0 0, 0 0, 0 0; }
-  100%{ background-position: 0 0, 800px 0, 0 0; }
+.bg::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:radial-gradient(60% 40% at 50% 30%,rgba(255,255,255,.08),transparent),
+    linear-gradient(135deg,rgba(255,255,255,.06),transparent 60%);
+  animation:bgGlow 12s ease-in-out infinite alternate;
+}
+.bg-stars,
+.bg-stripes{
+  position:absolute;
+  inset:0;
+}
+.bg-stars{
+  background-image:
+    radial-gradient(circle at 10% 20%,rgba(255,255,255,.15) 0 2px,transparent 40px),
+    radial-gradient(circle at 40% 60%,rgba(255,255,255,.1) 0 2px,transparent 30px),
+    radial-gradient(circle at 80% 30%,rgba(255,255,255,.12) 0 2px,transparent 25px);
+  animation:starDrift 22s linear infinite;
+}
+.bg-stripes{
+  background:linear-gradient(120deg,rgba(255,0,0,.06) 25%,transparent 25% 50%,rgba(0,102,255,.08) 50% 75%,transparent 75%);
+  background-size:260px 260px;
+  animation:stripes 30s linear infinite;
 }
 
-.wrap{
+@keyframes bgGlow{
+  0%{opacity:.5; transform:scale(1);}
+  100%{opacity:.8; transform:scale(1.1);}
+}
+@keyframes starDrift{
+  0%{transform:translateY(0);}
+  100%{transform:translateY(-80px);}
+}
+@keyframes stripes{
+  0%{background-position:0 0;}
+  100%{background-position:320px 0;}
+}
+
+.scene{
   position:relative;
-  height:100vh;
+  min-height:100vh;
   display:flex;
   align-items:center;
   justify-content:center;
-  padding:24px;
+  gap:clamp(24px,4vw,60px);
+  padding:clamp(20px,4vw,60px);
+  z-index:1;
+  flex-wrap:wrap;
 }
 
-.left-mask{
-  position:absolute; left:0; top:0; bottom:0; width:min(22vw,280px);
-  display:flex; align-items:center; justify-content:center;
+.hero-column{
+  width:min(320px,30vw);
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+  color:#fff;
+}
+
+.mascot{
+  position:relative;
+  border-radius:28px;
+  padding:18px;
+  background:radial-gradient(circle at 20% 20%,rgba(255,255,255,.15),rgba(15,8,4,.9));
+  border:1px solid rgba(255,214,153,.3);
+  box-shadow:0 25px 60px rgba(0,0,0,.6);
+  overflow:hidden;
+  transition:transform .35s ease;
+}
+.mascot::after{
+  content:'';
+  position:absolute;
+  inset:4px;
+  border-radius:24px;
+  border:1px solid rgba(255,255,255,.08);
   pointer-events:none;
 }
-.mascot{
-  width:min(18vw,220px); aspect-ratio:1/1;
-  border-radius:18px; background:#111; border:1px solid #222;
-  display:flex; align-items:center; justify-content:center;
-  box-shadow:0 10px 30px rgba(0,0,0,.4);
-}
-.face{font-size:min(12vw,96px)}
+.mascot.spin{transform:translateY(-4px) rotate(-1deg);}
+.mascot.celebrate{transform:translateY(-6px) rotate(1deg);}
+.mascot.sad{transform:translateY(2px) scale(.98);}
 
-.stage-holder{
-  width:min(92vw,1280px);
-  height:min(80vh,720px);
-  border-radius:20px; border:1px solid #2a2a2a; background:rgba(0,0,0,.35);
-  backdrop-filter: blur(2px);
+.mascot-glow{
+  position:absolute;
+  inset:-40px;
+  background:radial-gradient(circle,rgba(255,190,46,.25),transparent 55%);
+  filter:blur(20px);
+}
+
+.mascot-figure{
+  position:relative;
+  width:100%;
+  aspect-ratio:3/4;
+  border-radius:22px;
+  background:linear-gradient(180deg,#341b0f,#120802 70%);
+  border:1px solid rgba(255,165,89,.2);
+  box-shadow:inset 0 0 20px rgba(0,0,0,.6);
   overflow:hidden;
-  display:flex; align-items:center; justify-content:center;
+}
+.mascot-head{
+  position:absolute;
+  top:14%;
+  left:50%;
+  width:58%;
+  transform:translateX(-50%);
+  height:30%;
+  background:#ffdfb4;
+  border-radius:50% 50% 42% 42%;
+  box-shadow:0 4px 0 #d4934c;
+}
+.hair{
+  position:absolute;
+  top:-18%;
+  left:0;
+  right:0;
+  height:40%;
+  background:linear-gradient(90deg,#ffec7a,#ffbf37);
+  border-radius:60% 60% 40% 40%;
+  box-shadow:0 4px 0 rgba(0,0,0,.25);
+}
+.eyes{
+  position:absolute;
+  bottom:32%;
+  left:50%;
+  width:46%;
+  height:18%;
+  transform:translateX(-50%);
+  display:flex;
+  justify-content:space-between;
+}
+.eyes::before,
+.eyes::after{
+  content:'';
+  width:32%;
+  height:100%;
+  background:#fff;
+  border-radius:50%;
+  box-shadow:inset 0 0 0 2px rgba(0,0,0,.35);
+  background:radial-gradient(circle at 50% 50%,#0c1b3c 40%,#000 60%);
+}
+.mouth{
+  position:absolute;
+  bottom:16%;
+  left:50%;
+  width:28%;
+  height:12%;
+  transform:translateX(-50%);
+  border-bottom:4px solid #b0542a;
+  border-radius:0 0 50% 50%;
 }
 
-.stage{ width:100%; height:100%; }
+.mascot-body{
+  position:absolute;
+  bottom:12%;
+  left:50%;
+  transform:translateX(-50%);
+  width:70%;
+  height:40%;
+}
+.suit{
+  position:absolute;
+  inset:0;
+  border-radius:32px 32px 16px 16px;
+  background:linear-gradient(120deg,#161f55,#0b0f2b);
+  border:2px solid rgba(255,255,255,.08);
+}
+.tie{
+  position:absolute;
+  top:10%;
+  left:50%;
+  width:14%;
+  height:70%;
+  background:linear-gradient(180deg,#ff2e4f,#c0132c);
+  transform:translateX(-50%);
+  border-radius:40% 40% 5px 5px;
+}
+.flag-pin{
+  position:absolute;
+  top:24%;
+  right:12%;
+  width:18px;
+  height:12px;
+  background:linear-gradient(90deg,#b71c1c 0 50%,#0c47a1 50% 100%);
+  border:2px solid rgba(255,255,255,.3);
+  border-radius:3px;
+}
+.mascot-prop{
+  position:absolute;
+  bottom:-8%;
+  left:-6%;
+  width:50%;
+  height:50%;
+  border-radius:50%;
+  background:radial-gradient(circle,#f4b455,transparent 70%);
+  filter:blur(8px);
+}
+.mascot-caption{
+  font-weight:700;
+  margin-top:12px;
+  text-shadow:0 2px 8px rgba(0,0,0,.5);
+}
+
+.hero-card{
+  border-radius:22px;
+  padding:16px 18px;
+  background:rgba(11,13,22,.8);
+  border:1px solid rgba(255,255,255,.08);
+  backdrop-filter:blur(8px);
+  box-shadow:0 12px 24px rgba(0,0,0,.4);
+}
+.hero-card h3{
+  margin:0 0 6px;
+  font-size:1.25rem;
+}
+.hero-card p{
+  margin:4px 0;
+  opacity:.85;
+}
+.hero-card .badge{
+  font-size:.85rem;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+
+.game-column{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:28px;
+  width:min(92vw,1280px);
+  padding-bottom:40px;
+}
+
+.stage-shell{
+  position:relative;
+  width:100%;
+  aspect-ratio:16/9;
+  border-radius:32px;
+  padding:clamp(12px,2vw,28px);
+  background:linear-gradient(180deg,#42220c,#1d0c05 65%,#0c0804);
+  box-shadow:0 40px 80px rgba(0,0,0,.55), inset 0 0 40px rgba(255,196,109,.05);
+}
+.stage-frame{
+  position:absolute;
+  inset:12px;
+  border-radius:26px;
+  border:2px solid rgba(255,207,134,.35);
+  pointer-events:none;
+}
+.stage-holder{
+  position:relative;
+  width:100%;
+  height:100%;
+  border-radius:22px;
+  overflow:hidden;
+  background:#04070c;
+  box-shadow:inset 0 0 40px rgba(0,0,0,.9);
+}
+.stage-shine{
+  position:absolute;
+  inset:-20%;
+  background:radial-gradient(circle at 50% 20%,rgba(255,255,255,.12),transparent 60%);
+  pointer-events:none;
+}
+.stage-vignette{
+  position:absolute;
+  inset:0;
+  background:radial-gradient(circle at 50% 100%,transparent 50%,rgba(0,0,0,.55) 100%);
+  pointer-events:none;
+}
+.stage-bottom-light{
+  position:absolute;
+  left:50%;
+  bottom:0;
+  width:50%;
+  height:18px;
+  transform:translateX(-50%);
+  background:radial-gradient(circle,rgba(255,190,92,.8),transparent 70%);
+  filter:blur(6px);
+  opacity:.4;
+}
+.stage{
+  position:relative;
+  width:100%;
+  height:100%;
+}
+
+.hud-slot{
+  width:100%;
+  display:flex;
+  justify-content:center;
+  margin-top:-36px;
+  position:relative;
+  z-index:5;
+}
+
+@media (max-width: 1100px) {
+  .scene{
+    flex-direction:column;
+  }
+  .hero-column{
+    width:100%;
+    max-width:520px;
+    flex-direction:row;
+  }
+  .mascot{
+    flex:1;
+  }
+  .hero-card{
+    flex:1;
+  }
+}
 </style>

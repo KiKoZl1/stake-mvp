@@ -1,5 +1,3 @@
-import { EventEmitter } from './emitter';
-
 export type BookEvent =
  | { type:'spinStart'; bet:number; mode:string }
  | { type:'reelStop'; reel:number; symbols:string[] }
@@ -17,7 +15,9 @@ export type BookEvent =
  | { type:'reelRespin'; reels:number[] }
  | { type:'respinEnd' };
 
-export function createBookPlayer(emitter: EventEmitter) {
+type EmitLike = { emit: (type: BookEvent['type'], payload: any) => void };
+
+export function createBookPlayer(emitter: EmitLike) {
   const play = async (events: BookEvent[]) => {
     for (const e of events) await emitter.emit(e.type, e);
   };

@@ -26,44 +26,50 @@
 </script>
 
 {#if open}
-<div class="modal" role="dialog" aria-modal="true" aria-label="Modos e Compras de Bônus"
-     tabindex="0" bind:this={modalEl} on:keydown={onKey} on:click|self={close}>
+<div class="modal" role="dialog" aria-modal="true" aria-label="Modos e bonus buy"
+     tabindex="-1" bind:this={modalEl} on:keydown={onKey} on:click|self={close}>
   <div class="panel">
-    <header><h2>Modos & Bônus</h2></header>
+    <header>
+      <div>
+        <p class="eyebrow">Choose your chaos</p>
+        <h2>Modos & Bônus</h2>
+      </div>
+      <button type="button" class="icon" on:click={close} aria-label="Fechar painel">×</button>
+    </header>
 
     <div class="wrap">
       <section>
         <h3>Modos de Aposta</h3>
-        <div class="list">
+        <div class="card-grid">
           {#each modes as m}
-            <div class="item">
+            <article class="card">
               <div class="info">
                 <div class="name">{m.name}</div>
                 <div class="desc">{m.desc}</div>
               </div>
-              <div class="actions">
-                <div class="cost" aria-label="Multiplicador de custo">x{m.cost.toFixed(2)}</div>
+              <div class="footer">
+                <span class="cost" aria-label="Multiplicador de custo">x{m.cost.toFixed(2)}</span>
                 <button type="button" on:click={()=>select(m.key)}>Selecionar</button>
               </div>
-            </div>
+            </article>
           {/each}
         </div>
       </section>
 
       <section>
         <h3>Compras de Bônus</h3>
-        <div class="list">
+        <div class="card-grid">
           {#each buys as b}
-            <div class="item">
+            <article class="card">
               <div class="info">
                 <div class="name">{b.name}</div>
                 <div class="desc">{b.desc}</div>
               </div>
-              <div class="actions">
-                <div class="cost">x{b.cost.toFixed(2)}</div>
+              <div class="footer">
+                <span class="cost">x{b.cost.toFixed(2)}</span>
                 <button type="button" class="buy" on:click={()=>buy(b.key)}>Comprar</button>
               </div>
-            </div>
+            </article>
           {/each}
         </div>
       </section>
@@ -77,19 +83,22 @@
 {/if}
 
 <style>
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:grid;place-items:center;z-index:50}
-.panel{width:min(720px,96vw);background:#121212;border:1px solid #2a2a2a;border-radius:14px;padding:18px;box-shadow:0 20px 80px rgba(0,0,0,.45)}
-header h2{margin:0 0 12px;font-weight:800}
-.wrap{display:grid;grid-template-columns:1fr;gap:14px}
-h3{margin:8px 0}
-.list{display:flex;flex-direction:column;gap:10px}
-.item{display:flex;justify-content:space-between;gap:14px;background:#181818;border:1px solid #2a2a2a;border-radius:12px;padding:12px}
-.name{font-weight:800}
-.desc{opacity:.85}
-.actions{display:flex;align-items:center;gap:12px}
-.cost{opacity:.9}
-button{background:#222;border:1px solid #383838;border-radius:10px;padding:10px 14px;font-weight:700}
-.buy{background:#2c3f7a;border-color:#3a59a8}
-footer{display:flex;justify-content:flex-end;margin-top:8px}
-.ghost{background:transparent}
+.modal{position:fixed;inset:0;background:rgba(4,6,12,.82);backdrop-filter:blur(7px);display:grid;place-items:center;z-index:50;padding:24px}
+.panel{width:min(760px,96vw);background:radial-gradient(circle at 15% 15%,rgba(255,255,255,.12),rgba(5,6,12,.96));border:1px solid rgba(255,255,255,.1);border-radius:28px;padding:26px;box-shadow:0 30px 140px rgba(0,0,0,.6);color:#f7f8ff}
+header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;gap:16px}
+.eyebrow{text-transform:uppercase;font-size:.7rem;letter-spacing:.3em;opacity:.7;margin:0}
+header h2{margin:6px 0 0;font-size:1.7rem}
+.icon{width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:1.2rem;cursor:pointer}
+.wrap{display:grid;grid-template-columns:1fr;gap:18px;margin-top:12px}
+h3{margin:0 0 10px;text-transform:uppercase;letter-spacing:.12em;font-size:.85rem;color:#ffec8a}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:14px;min-height:150px}
+.name{font-weight:800;font-size:1.05rem}
+.desc{opacity:.85;font-size:.9rem}
+.footer{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.cost{font-weight:700;opacity:.9}
+button{font-weight:700;border-radius:12px;padding:10px 16px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;cursor:pointer}
+.buy{background:linear-gradient(120deg,#ffec8a,#ff8f3b);color:#1c0f05;border:none}
+footer{display:flex;justify-content:flex-end;margin-top:18px}
+.ghost{background:transparent;border-color:rgba(255,255,255,.3)}
 </style>

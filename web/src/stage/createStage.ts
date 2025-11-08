@@ -21,6 +21,7 @@ type Cell = {
   bg: Graphics;
   label: Text;
   stroke?: Graphics;
+  symbol: string;
 };
 
 type Column = {
@@ -59,19 +60,30 @@ function colorFor(sym: string): number {
 }
 
 function textFor(sym: string): string {
-  if (sym === 'X') return '';
-  if (!MERICA_MODE) return sym === 'S' ? '★' : sym;
+  if (!MERICA_MODE) return sym === 'S' ? '\u272D' : sym;
   const emoji: Record<string,string> = {
-    A:'🌭', B:'🕶️', C:'🤠', D:'🛞',
-    E:'🎆', F:'🎸', G:'🗽',
-    H:'🦅', I:'🛻',
-    S:'🧨',
+    A:'\u{1F964}', // drink
+    B:'\u{1F354}', // burger
+    C:'\u{1F576}', // shades
+    D:'\u{1F920}', // cowboy hat
+    E:'\u{1F386}', // fireworks
+    F:'\u{1F3B8}', // guitar
+    G:'\u{1F699}', // truck tire
+    H:'\u{1F985}', // eagle
+    I:'\u{1F69A}', // pickup
+    S:'\u{1F5FD}', // statue
   };
+  if (sym.startsWith('W')) return '\u{1F985}';
   return emoji[sym] ?? sym;
 }
 
 function randSym(): string {
   const pool = ['A','B','C','D','E','F','G','H','I'];
+  const wildChance = Math.random();
+  if (wildChance > 0.92) return 'W5';
+  if (wildChance > 0.88) return 'W3';
+  if (wildChance > 0.82) return 'W2';
+  if (Math.random() > 0.9) return 'S';
   return pool[(Math.random()*pool.length)|0];
 }
 
@@ -101,7 +113,14 @@ function makeCell(w: number, h: number): Cell {
   const stroke = new Graphics();
   root.addChild(stroke);
 
-  return { root, bg, label, stroke };
+  return { root, bg, label, stroke, symbol: 'A' };
+}
+
+function applySymbol(cell: Cell, sym: string) {
+  cell.symbol = sym;
+  cell.bg.tint = colorFor(sym);
+  cell.label.text = sym.startsWith('W') ? sym : textFor(sym);
+  cell.label.alpha = 1;
 }
 
 function bump(rail: Container, ticker: Ticker) {
@@ -146,6 +165,11 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
   grid.zIndex = 2;
   root.addChild(grid);
 
+  const gridMask = new Graphics();
+  gridMask.zIndex = 2;
+  root.addChild(gridMask);
+  grid.mask = gridMask;
+
   const respinFlash = new Graphics();
   respinFlash.zIndex = 5;
   respinFlash.alpha = 0;
@@ -184,6 +208,9 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
     const gridW = stageW - padOuter * 2;
     const gridH = stageH - padOuter * 2;
     grid.position.set(padOuter, padOuter);
+    gridMask.position.set(padOuter, padOuter);
+    gridMask.clear();
+    gridMask.roundRect(0, 0, gridW, gridH, 22).fill(0xffffff);
 
     colW = (gridW - (REELS - 1) * PADDING) / REELS;
     rowH = (gridH - (ROWS - 1) * PADDING) / ROWS;
@@ -201,6 +228,7 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
         for (let r = 0; r < ROWS; r++) {
           const cell = makeCell(colW, rowH);
           rail.addChild(cell.root);
+          applySymbol(cell, randSym());
           cells.push(cell);
         }
 
@@ -255,6 +283,7 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
         cell.bg.roundRect(0, 0, colW, rowH, CELL_R).fill(0x111111);
         cell.label.style.fontSize = Math.round(rowH * 0.38);
         cell.label.position.set(colW/2, rowH/2);
+        applySymbol(cell, cell.symbol);
       }
     }
 
@@ -281,19 +310,13 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
       col.rail.y += col.speed * (tk.deltaTime / 1.0);
       if (col.rail.y >= col.step) {
         col.rail.y -= col.step;
-        // shift visual das labels/bgs
         for (let r = ROWS - 1; r > 0; r--) {
-          const above = col.cells[r - 1];
-          const here = col.cells[r];
-          here.label.text = above.label.text;
-          here.bg.tint = (above.bg.tint as any) ?? 0x111111;
-          here.label.alpha = above.label.alpha;
+          const sym = col.cells[r - 1].symbol;
+          applySymbol(col.cells[r], sym);
         }
         const top = col.cells[0];
         const rnd = randSym();
-        top.bg.tint = colorFor(rnd);
-        top.label.text = textFor(rnd);
-        top.label.alpha = 1;
+        applySymbol(top, rnd);
       }
     }
   };
@@ -315,11 +338,9 @@ export async function createStage(hostEl: HTMLElement): Promise<StageAPI> {
     col.rail.y = 0;
 
     for (let r = 0; r < ROWS; r++) {
-      const sym = symbols[r] ?? 'X';
+      const sym = symbols[r] ?? randSym();
       const cell = col.cells[r];
-      cell.bg.tint = colorFor(sym);
-      cell.label.text = sym.startsWith('W') ? sym : textFor(sym);
-      cell.label.alpha = sym === 'X' ? 0 : 1;
+      applySymbol(cell, sym);
       cell.stroke?.clear();
     }
 
