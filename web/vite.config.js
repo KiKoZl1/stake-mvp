@@ -61,7 +61,7 @@ export default defineConfig({
         "script-src 'self' 'unsafe-eval'",
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: blob:",
-        'connect-src *',
+        'connect-src * data: blob:',
         "font-src 'self' data:",
         "worker-src 'self' blob:",
         "object-src 'none'",
@@ -69,3 +69,4 @@ export default defineConfig({
     },
   },
 });
+

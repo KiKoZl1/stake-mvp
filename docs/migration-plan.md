@@ -1,9 +1,10 @@
-﻿# Migration Plan - LINES to Stake MVP
+# Migration Plan - LINES to Stake MVP
 
 This document tracks the full migration of the LINES slot template into the `stake-mvp` workspace. It is the single source of truth while we finish the port and turn this repo into our reusable slot template.
 
 ## 1. Context & Vision
 - **Goal**: run the complete LINES experience (UI, gameplay loop, assets, tooling) inside `C:\dev\stake-mvp` using the existing math SDK and local RGS debug flow.
+- **Workspace**: all commands/edits happen strictly under `C:\dev\stake-mvp` so the repository remains consistent with VS Code and the user's tooling.
 - **Constraints**:
   - Keep the math SDK (`/math`) intact and keep supporting local `src/rgs/debug.ts` simulations.
   - Avoid depending on TESTESDK once the copy is complete; everything must live in this repo.
@@ -47,11 +48,17 @@ This document tracks the full migration of the LINES slot template into the `sta
   - `bookId=<id>` or `bookIndex=<index>` to lock a specific book
   - `random=1` to shuffle books even when a specific scenario was provided
 
+### 3.6 Storybook config
+- `.storybook/main.ts` and `preview.ts` now re-export the shared `config-storybook` presets, so Storybook uses the same settings as the LINES template.
+
+### 3.7 Gameplay polish
+- Added `updateGlobalMult` handling: `stateGame` tracks the current global multiplier + visibility, `bookEventHandlerMap` emits the UI events, and the `GlobalMultiplier` component is mounted so bonus rounds mirror the template behaviour (including the reset after the free-spin outro).
+
 ## 4. Outstanding Gaps (Detailed)
 ### 4.1 Book events & emitter wiring
-- `web/src/game/bookEventHandlerMap.ts` still logs "Missing bookEventHandler" during spins because some events from the live books are not registered yet.
-- Port any missing handlers from the original LINES repo and ensure `createPlayBookUtils` plus `playBookEvent` are registered inside the game setup.
-- Once handlers exist, verify that `packages/components-shared` contexts (BoardContext, event emitter, hotkeys, modal lifecycle) are initialised inside `App.svelte`.
+- `updateGlobalMult` is covered, but we still need to watch the console when spinning against live RGS data in case new event types appear.
+- Capture any new book-event signatures and mirror the original LINES handlers so `createPlayBookUtils` never hits the "Missing bookEventHandler" log.
+- Keep validating that the shared contexts (BoardContext, event emitter, hotkeys, modals) stay initialised inside `App.svelte` during autoplay, bonus buy, and resume scenarios.
 
 ### 4.2 Storybook & developer tooling
 - `.storybook` config from LINES still needs to be wired into `web/.storybook/` and scripts adjusted to use `config-storybook`.

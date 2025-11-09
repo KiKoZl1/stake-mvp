@@ -45,6 +45,16 @@ type BookEventFreeSpinRetrigger = {
 	positions: Position[];
 };
 
+type BookEventUpdateGlobalMult = {
+	index: number;
+	type: 'updateGlobalMult';
+	multiplier?: number;
+	value?: number;
+	globalMult?: number;
+	show?: boolean;
+	visible?: boolean;
+};
+
 type BookEventSetWin = {
 	index: number;
 	type: 'setWin';
@@ -92,6 +102,7 @@ export type BookEvent =
 	| BookEventFreeSpinTrigger
 	| BookEventUpdateFreeSpin
 	| BookEventFreeSpinRetrigger
+	| BookEventUpdateGlobalMult
 	| BookEventCreateBonusSnapshot
 	| BookEventFinalWin
 	| BookEventSetWin

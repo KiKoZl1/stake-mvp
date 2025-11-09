@@ -19,7 +19,7 @@
 />
 
 {#if showText}
-	<span class="add-your-loader">Add Your Loader</span>
+	<span class="add-your-loader">FREEDOOM</span>
 {/if}
 
 <style lang="scss">

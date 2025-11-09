@@ -1,15 +1,4 @@
-import type { Preview } from '@storybook/svelte';
+﻿import { preview as basePreview } from 'config-storybook';
 
-const preview: Preview = {
-  parameters: {
-    layout: 'fullscreen',
-    controls: {
-      matchers: {
-        color: /(background|color)$/i,
-        date: /Date$/i
-      }
-    }
-  }
-};
+export default basePreview;
 
-export default preview;

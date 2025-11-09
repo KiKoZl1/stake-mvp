@@ -1,3 +1,5 @@
+﻿import baseBooksData from '../../stories/data/base_books';
+import bonusBooksData from '../../stories/data/bonus_books';
 import type { BookEvent } from '../../game/typesBookEvent';
 
 export type DebugBook = {
@@ -6,139 +8,92 @@ export type DebugBook = {
 	payoutMultiplier?: number;
 };
 
-const simpleBoard = (rows: string[][]) =>
-	rows.map((row) => row.map((name) => ({ name } as const)));
+const normalizeBooks = (books: any[]): DebugBook[] =>
+	books.map((book, index) => ({
+		id: book.id ?? index + 1,
+		payoutMultiplier: book.payoutMultiplier,
+		events: (book.events ?? []) as BookEvent[],
+	}));
 
-export const baseBooksSample: DebugBook[] = [
-	{
-		id: 1,
-		payoutMultiplier: 0,
-		events: [
-			{
-				index: 0,
-				type: 'reveal',
-				board: simpleBoard([
-					['L2', 'L1', 'L4', 'H2', 'L1'],
-					['H1', 'L5', 'L2', 'H3', 'L4'],
-					['L3', 'L5', 'L3', 'H4', 'L4'],
-					['H4', 'H3', 'L4', 'L5', 'L1'],
-					['H3', 'L3', 'L3', 'H1', 'H1'],
-				]),
-				paddingPositions: [216, 205, 195, 16, 65],
-				gameType: 'basegame',
-				anticipation: [0, 0, 0, 0, 0],
-			},
-			{ index: 1, type: 'setTotalWin', amount: 0 },
-			{ index: 2, type: 'finalWin', amount: 0 },
-		],
-	},
-	{
-		id: 2,
-		payoutMultiplier: 1.2,
-		events: [
-			{
-				index: 0,
-				type: 'reveal',
-				board: simpleBoard([
-					['H2', 'H1', 'L2', 'L2', 'H1'],
-					['L2', 'H4', 'S', 'L5', 'L3'],
-					['H4', 'L4', 'H2', 'S', 'L4'],
-					['L3', 'L4', 'H2', 'L1', 'L2'],
-					['H3', 'S', 'L5', 'L2', 'H1'],
-				]),
-				paddingPositions: [49, 8, 212, 183, 167],
-				gameType: 'basegame',
-				anticipation: [0, 0, 0, 1, 2],
-			},
-			{ index: 1, type: 'setTotalWin', amount: 0 },
-			{
-				index: 2,
-				type: 'freeSpinTrigger',
-				totalFs: 8,
-				positions: [
-					{ reel: 1, row: 2 },
-					{ reel: 2, row: 3 },
-					{ reel: 4, row: 1 },
-				],
-			},
-			{ index: 3, type: 'updateFreeSpin', amount: 0, total: 8 },
-			{
-				index: 4,
-				type: 'reveal',
-				board: simpleBoard([
-					['H3', 'L4', 'L5', 'L1', 'L2'],
-					['L5', 'H1', 'L2', 'H1', 'H4'],
-					['L2', 'L1', 'S', 'L2', 'H3'],
-					['L4', 'L4', 'H2', 'S', 'H2'],
-					['L4', 'L5', 'L2', 'L5', 'L3'],
-				]),
-				paddingPositions: [140, 121, 101, 163, 38],
-				gameType: 'freegame',
-				anticipation: [0, 0, 0, 1, 2],
-			},
-			{ index: 5, type: 'setTotalWin', amount: 0 },
-			{ index: 6, type: 'updateFreeSpin', amount: 1, total: 8 },
-			{
-				index: 7,
-				type: 'setWin',
-				amount: 500_000,
-				winLevel: 2,
-			},
-			{ index: 8, type: 'setTotalWin', amount: 500_000 },
-			{ index: 9, type: 'freeSpinEnd', amount: 500_000, winLevel: 2 },
-			{ index: 10, type: 'finalWin', amount: 500_000 },
-		],
-	},
-];
+export const baseBooksSample: DebugBook[] = normalizeBooks(baseBooksData as any[]);
+export const bonusBooksSample: DebugBook[] = normalizeBooks(bonusBooksData as any[]);
 
-export const bonusBooksSample: DebugBook[] = [
-	{
-		id: 'bonus-1',
-		payoutMultiplier: 3.9,
-		events: [
-			{
-				index: 0,
-				type: 'reveal',
-				board: simpleBoard([
-					['H2', 'S', 'L4', 'L2', 'H4'],
-					['L5', 'L2', 'H4', 'S', 'L5'],
-					['H1', 'S', 'H2', 'H2', 'L2'],
-					['L4', 'H3', 'S', 'L5', 'L3'],
-					['H4', 'L5', 'H1', 'L1', 'H2'],
-				]),
-				paddingPositions: [99, 55, 140, 64, 8],
-				gameType: 'basegame',
-				anticipation: [0, 1, 2, 0, 0],
-			},
-			{
-				index: 1,
-				type: 'freeSpinTrigger',
-				totalFs: 8,
-				positions: [
-					{ reel: 0, row: 1 },
-					{ reel: 1, row: 3 },
-					{ reel: 2, row: 2 },
-				],
-			},
-			{ index: 2, type: 'updateFreeSpin', amount: 0, total: 8 },
-			{
-				index: 3,
-				type: 'reveal',
-				board: simpleBoard([
-					['H2', 'L1', 'L2', 'H3', 'H1'],
-					['L2', 'H4', 'L4', 'L2', 'H4'],
-					['L1', 'L4', 'H2', 'L3', 'L4'],
-					['H3', 'L3', 'H3', 'H1', 'L3'],
-					['L5', 'L2', 'H2', 'H4', 'L5'],
-				]),
-				paddingPositions: [42, 8, 96, 151, 77],
-				gameType: 'freegame',
-				anticipation: [0, 0, 0, 0, 0],
-			},
-			{ index: 4, type: 'setWin', amount: 720_000, winLevel: 3 },
-			{ index: 5, type: 'setTotalWin', amount: 720_000 },
-			{ index: 6, type: 'freeSpinEnd', amount: 720_000, winLevel: 3 },
-			{ index: 7, type: 'finalWin', amount: 720_000 },
-		],
-	},
-];
+const scenarioBooks: Record<'base' | 'bonus', DebugBook[]> = {
+	base: baseBooksSample,
+	bonus: bonusBooksSample,
+};
+
+const pickBook = (
+	books: DebugBook[],
+	opts: { bookId?: string; bookIndex?: string; random?: boolean; preferRandom?: boolean },
+) => {
+	const { random = false, preferRandom = false } = opts;
+	if (!books.length) return { id: 'debug-empty', events: [] };
+
+	const bookId = opts.bookId ? Number(opts.bookId) : undefined;
+	if (typeof bookId === 'number' && !Number.isNaN(bookId)) {
+		const byId = books.find((book) => Number(book.id) === bookId);
+		if (byId) return byId;
+	}
+
+	const bookIndex = opts.bookIndex ? Number(opts.bookIndex) : undefined;
+	if (typeof bookIndex === 'number' && Number.isFinite(bookIndex)) {
+		const index = ((bookIndex % books.length) + books.length) % books.length;
+		return books[index];
+	}
+
+	const shouldRandom = random || (preferRandom && opts.bookId == null && opts.bookIndex == null);
+	if (shouldRandom) {
+		const randomIndex = Math.floor(Math.random() * books.length);
+		return books[randomIndex];
+	}
+
+	return books[0];
+};
+
+const scenarioAliases: Record<string, 'base' | 'bonus' | 'random'> = {
+	bonus: 'bonus',
+	fs: 'bonus',
+	freespin: 'bonus',
+	freegame: 'bonus',
+	random: 'random',
+	default: 'base',
+};
+
+const scenarioBooksMap: Record<'base' | 'bonus', DebugBook[]> = scenarioBooks;
+
+const pickRandomScenario = (): 'base' | 'bonus' => (Math.random() < 0.5 ? 'base' : 'bonus');
+
+const normaliseScenario = (value?: string): 'base' | 'bonus' => {
+	if (!value) return pickRandomScenario();
+	const key = value.toLowerCase();
+	const alias = scenarioAliases[key];
+	if (alias === 'random') return pickRandomScenario();
+	return (alias as 'base' | 'bonus') ?? pickRandomScenario();
+};
+
+const query = new URLSearchParams(location.search);
+const qs = (name: string) => query.get(name);
+
+export function isDebug() {
+	return qs('debug') === '1';
+}
+
+export async function debugPlay(): Promise<{ round: { id?: string; events: BookEvent[] } }> {
+	const scenario = normaliseScenario(qs('scenario') ?? undefined);
+	const books = scenarioBooksMap[scenario];
+	const randomFlag = qs('random') === '1';
+	const chosenBook = pickBook(books, {
+		bookId: qs('bookId') ?? undefined,
+		bookIndex: qs('bookIndex') ?? undefined,
+		random: randomFlag,
+		preferRandom: scenario === 'base',
+	});
+
+	return {
+		round: {
+			id: `debug-${scenario}-${chosenBook.id ?? '0'}`,
+			events: chosenBook.events ?? [],
+		},
+	};
+}

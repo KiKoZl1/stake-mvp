@@ -124,6 +124,32 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 		});
 	},
 
+	updateGlobalMult: async (bookEvent: BookEventOfType<'updateGlobalMult'>) => {
+		const rawMultiplier =
+			bookEvent.multiplier ??
+			bookEvent.value ??
+			bookEvent.globalMult ??
+			stateGame.globalMultiplier ??
+			1;
+		const nextMultiplier = Math.max(1, Number(rawMultiplier) || 1);
+		const shouldShow =
+			bookEvent.visible ??
+			bookEvent.show ??
+			nextMultiplier > 1;
+
+		stateGame.globalMultiplier = nextMultiplier;
+		stateGame.globalMultiplierVisible = shouldShow;
+
+		eventEmitter.broadcast({
+			type: 'globalMultiplierUpdate',
+			multiplier: nextMultiplier,
+		});
+		eventEmitter.broadcast({
+			type: shouldShow ? 'globalMultiplierShow' : 'globalMultiplierHide',
+		});
+	},
+
+
 	freeSpinEnd: async (bookEvent: BookEventOfType<'freeSpinEnd'>) => {
 		const winLevelData = winLevelMap[bookEvent.winLevel as WinLevel];
 
@@ -142,6 +168,10 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 		eventEmitter.broadcast({ type: 'freeSpinOutroHide' });
 		eventEmitter.broadcast({ type: 'freeSpinCounterHide' });
 		stateUi.freeSpinCounterShow = false;
+		stateGame.globalMultiplier = 1;
+		stateGame.globalMultiplierVisible = false;
+		eventEmitter.broadcast({ type: 'globalMultiplierUpdate', multiplier: 1 });
+		eventEmitter.broadcast({ type: 'globalMultiplierHide' });
 		await eventEmitter.broadcastAsync({ type: 'transition' });
 		await eventEmitter.broadcastAsync({ type: 'uiShow' });
 		await eventEmitter.broadcastAsync({ type: 'drawerUnfold' });
