@@ -88,12 +88,13 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 		eventEmitter.broadcast({ type: 'boardFrameGlowShow' });
 		eventEmitter.broadcast({ type: 'freeSpinCounterShow' });
 		stateUi.freeSpinCounterShow = true;
+		stateUi.freeSpinCounterCurrent = 0;
+		stateUi.freeSpinCounterTotal = bookEvent.totalFs;
 		eventEmitter.broadcast({
 			type: 'freeSpinCounterUpdate',
-			current: undefined,
-			total: bookEvent.totalFs,
+			current: stateUi.freeSpinCounterCurrent,
+			total: stateUi.freeSpinCounterTotal,
 		});
-		stateUi.freeSpinCounterTotal = bookEvent.totalFs;
 		await eventEmitter.broadcastAsync({ type: 'uiShow' });
 		await eventEmitter.broadcastAsync({ type: 'drawerButtonShow' });
 		eventEmitter.broadcast({ type: 'drawerFold' });
@@ -101,14 +102,28 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 	updateFreeSpin: async (bookEvent: BookEventOfType<'updateFreeSpin'>) => {
 		eventEmitter.broadcast({ type: 'freeSpinCounterShow' });
 		stateUi.freeSpinCounterShow = true;
+		const currentSpin = Math.min(bookEvent.amount + 1, bookEvent.total);
+		stateUi.freeSpinCounterCurrent = currentSpin;
+		stateUi.freeSpinCounterTotal = bookEvent.total;
 		eventEmitter.broadcast({
 			type: 'freeSpinCounterUpdate',
-			current: bookEvent.amount + 1,
-			total: bookEvent.total,
+			current: currentSpin,
+			total: stateUi.freeSpinCounterTotal,
 		});
-		stateUi.freeSpinCounterTotal = bookEvent.amount + 1;
-		stateUi.freeSpinCounterTotal = bookEvent.total;
 	},
+	freeSpinRetrigger: async (bookEvent: BookEventOfType<'freeSpinRetrigger'>) => {
+		eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_scatter_win_v2' });
+		await animateSymbols({ positions: bookEvent.positions });
+		eventEmitter.broadcast({ type: 'freeSpinCounterShow' });
+		stateUi.freeSpinCounterShow = true;
+		stateUi.freeSpinCounterTotal = bookEvent.totalFs;
+		eventEmitter.broadcast({
+			type: 'freeSpinCounterUpdate',
+			current: stateUi.freeSpinCounterCurrent,
+			total: stateUi.freeSpinCounterTotal,
+		});
+	},
+
 	freeSpinEnd: async (bookEvent: BookEventOfType<'freeSpinEnd'>) => {
 		const winLevelData = winLevelMap[bookEvent.winLevel as WinLevel];
 

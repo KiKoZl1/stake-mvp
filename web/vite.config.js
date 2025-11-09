@@ -34,10 +34,7 @@ const packageAliases = [
 ];
 
 const aliasFromPackages = Object.fromEntries(
-  packageAliases.flatMap((pkg) => [
-    [pkg, path.resolve(__dirname, `../packages/${pkg}/index.ts`)],
-    [`${pkg}/*`, path.resolve(__dirname, `../packages/${pkg}/*`)],
-  ])
+  packageAliases.map((pkg) => [pkg, path.resolve(__dirname, `../packages/${pkg}`)])
 );
 
 export default defineConfig({
@@ -66,6 +63,7 @@ export default defineConfig({
         "img-src 'self' data: blob:",
         'connect-src *',
         "font-src 'self' data:",
+        "worker-src 'self' blob:",
         "object-src 'none'",
       ].join('; '),
     },

@@ -22,6 +22,7 @@ export const playBet = async (bet: Bet) => {
 const BOOK_EVENT_TYPES_TO_RESERVE_FOR_SNAPSHOT = [
 	'updateGlobalMult',
 	'freeSpinTrigger',
+	'freeSpinRetrigger',
 	'updateFreeSpin',
 	'setTotalWin',
 ];

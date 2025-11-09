@@ -1,194 +1,199 @@
 {
-  "compilerOptions": {
-    "composite": true,
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "target": "ES2022",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
-    "types": [
-      "svelte",
-      "vite/client",
-      "node"
-    ],
-    "strict": true,
-    "resolveJsonModule": true,
-    "allowJs": true,
-    "checkJs": false,
-    "noEmit": false,
-    "useDefineForClassFields": true,
-    "baseUrl": ".",
-    "paths": {
-      "components-layout": [
-        "../packages/components-layout/index.ts"
-      ],
-      "components-layout/*": [
-        "../packages/components-layout/*"
-      ],
-      "components-pixi": [
-        "../packages/components-pixi/index.ts"
-      ],
-      "components-pixi/*": [
-        "../packages/components-pixi/*"
-      ],
-      "components-shared": [
-        "../packages/components-shared/index.ts"
-      ],
-      "components-shared/*": [
-        "../packages/components-shared/*"
-      ],
-      "components-storybook": [
-        "../packages/components-storybook/index.ts"
-      ],
-      "components-storybook/*": [
-        "../packages/components-storybook/*"
-      ],
-      "components-ui-html": [
-        "../packages/components-ui-html/index.ts"
-      ],
-      "components-ui-html/*": [
-        "../packages/components-ui-html/*"
-      ],
-      "components-ui-pixi": [
-        "../packages/components-ui-pixi/index.ts"
-      ],
-      "components-ui-pixi/*": [
-        "../packages/components-ui-pixi/*"
-      ],
-      "constants-shared": [
-        "../packages/constants-shared/index.ts"
-      ],
-      "constants-shared/*": [
-        "../packages/constants-shared/*"
-      ],
-      "envs": [
-        "../packages/envs/index.ts"
-      ],
-      "envs/*": [
-        "../packages/envs/*"
-      ],
-      "pixi-svelte": [
-        "../packages/pixi-svelte/index.ts"
-      ],
-      "pixi-svelte/*": [
-        "../packages/pixi-svelte/*"
-      ],
-      "pixi-svelte-storybook": [
-        "../packages/pixi-svelte-storybook/index.ts"
-      ],
-      "pixi-svelte-storybook/*": [
-        "../packages/pixi-svelte-storybook/*"
-      ],
-      "rgs-fetcher": [
-        "../packages/rgs-fetcher/index.ts"
-      ],
-      "rgs-fetcher/*": [
-        "../packages/rgs-fetcher/*"
-      ],
-      "state-shared": [
-        "../packages/state-shared/index.ts"
-      ],
-      "state-shared/*": [
-        "../packages/state-shared/*"
-      ],
-      "utils-bet": [
-        "../packages/utils-bet/index.ts"
-      ],
-      "utils-bet/*": [
-        "../packages/utils-bet/*"
-      ],
-      "utils-book": [
-        "../packages/utils-book/index.ts"
-      ],
-      "utils-book/*": [
-        "../packages/utils-book/*"
-      ],
-      "utils-event-emitter": [
-        "../packages/utils-event-emitter/index.ts"
-      ],
-      "utils-event-emitter/*": [
-        "../packages/utils-event-emitter/*"
-      ],
-      "utils-fetcher": [
-        "../packages/utils-fetcher/index.ts"
-      ],
-      "utils-fetcher/*": [
-        "../packages/utils-fetcher/*"
-      ],
-      "utils-layout": [
-        "../packages/utils-layout/index.ts"
-      ],
-      "utils-layout/*": [
-        "../packages/utils-layout/*"
-      ],
-      "utils-resize-observer": [
-        "../packages/utils-resize-observer/index.ts"
-      ],
-      "utils-resize-observer/*": [
-        "../packages/utils-resize-observer/*"
-      ],
-      "utils-shared": [
-        "../packages/utils-shared/index.ts"
-      ],
-      "utils-shared/*": [
-        "../packages/utils-shared/*"
-      ],
-      "utils-slots": [
-        "../packages/utils-slots/index.ts"
-      ],
-      "utils-slots/*": [
-        "../packages/utils-slots/*"
-      ],
-      "utils-sound": [
-        "../packages/utils-sound/index.ts"
-      ],
-      "utils-sound/*": [
-        "../packages/utils-sound/*"
-      ],
-      "utils-xstate": [
-        "../packages/utils-xstate/index.ts"
-      ],
-      "utils-xstate/*": [
-        "../packages/utils-xstate/*"
-      ],
-      "config-lingui": [
-        "../packages/config-lingui/index.ts"
-      ],
-      "config-lingui/*": [
-        "../packages/config-lingui/*"
-      ],
-      "config-storybook": [
-        "../packages/config-storybook/index.ts"
-      ],
-      "config-storybook/*": [
-        "../packages/config-storybook/*"
-      ],
-      "config-svelte": [
-        "../packages/config-svelte/index.js"
-      ],
-      "config-vite": [
-        "../packages/config-vite/index.js"
-      ],
-      "config-ts": [
-        "../packages/config-ts/base.json"
-      ],
-      "rgs-requests": [
-        "src/rgs/requests.ts"
-      ],
-      "rgs-requests-remote": [
-        "../packages/rgs-requests/index.ts"
-      ],
-      "$env/static/public": [
-        "src/env/public.ts"
-      ]
-    }
-  },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.svelte",
-    "src/**/*.d.ts"
-  ]
+    "compilerOptions":  {
+                            "composite":  true,
+                            "module":  "ESNext",
+                            "moduleResolution":  "Bundler",
+                            "target":  "ES2022",
+                            "lib":  [
+                                        "ES2022",
+                                        "DOM",
+                                        "DOM.Iterable"
+                                    ],
+                            "types":  [
+                                          "svelte",
+                                          "vite/client",
+                                          "node"
+                                      ],
+                            "strict":  true,
+                            "resolveJsonModule":  true,
+                            "allowJs":  true,
+                            "checkJs":  false,
+                            "noEmit":  false,
+                            "useDefineForClassFields":  true,
+                            "baseUrl":  ".",
+                            "paths":  {
+                                          "components-layout":  [
+                                                                    "../packages/components-layout"
+                                                                ],
+                                          "components-layout/*":  [
+                                                                      "../packages/components-layout/*"
+                                                                  ],
+                                          "components-pixi":  [
+                                                                  "../packages/components-pixi"
+                                                              ],
+                                          "components-pixi/*":  [
+                                                                    "../packages/components-pixi/*"
+                                                                ],
+                                          "components-shared":  [
+                                                                    "../packages/components-shared"
+                                                                ],
+                                          "components-shared/*":  [
+                                                                      "../packages/components-shared/*"
+                                                                  ],
+                                          "components-storybook":  [
+                                                                       "../packages/components-storybook"
+                                                                   ],
+                                          "components-storybook/*":  [
+                                                                         "../packages/components-storybook/*"
+                                                                     ],
+                                          "components-ui-html":  [
+                                                                     "../packages/components-ui-html"
+                                                                 ],
+                                          "components-ui-html/*":  [
+                                                                       "../packages/components-ui-html/*"
+                                                                   ],
+                                          "components-ui-pixi":  [
+                                                                     "../packages/components-ui-pixi"
+                                                                 ],
+                                          "components-ui-pixi/*":  [
+                                                                       "../packages/components-ui-pixi/*"
+                                                                   ],
+                                          "constants-shared":  [
+                                                                   "../packages/constants-shared"
+                                                               ],
+                                          "constants-shared/*":  [
+                                                                     "../packages/constants-shared/*"
+                                                                 ],
+                                          "envs":  [
+                                                       "../packages/envs"
+                                                   ],
+                                          "envs/*":  [
+                                                         "../packages/envs/*"
+                                                     ],
+                                          "pixi-svelte":  [
+                                                              "../packages/pixi-svelte"
+                                                          ],
+                                          "pixi-svelte/*":  [
+                                                                "../packages/pixi-svelte/*"
+                                                            ],
+                                          "pixi-svelte-storybook":  [
+                                                                        "../packages/pixi-svelte-storybook"
+                                                                    ],
+                                          "pixi-svelte-storybook/*":  [
+                                                                          "../packages/pixi-svelte-storybook/*"
+                                                                      ],
+                                          "rgs-fetcher":  [
+                                                              "../packages/rgs-fetcher"
+                                                          ],
+                                          "rgs-fetcher/*":  [
+                                                                "../packages/rgs-fetcher/*"
+                                                            ],
+                                          "state-shared":  [
+                                                               "../packages/state-shared"
+                                                           ],
+                                          "state-shared/*":  [
+                                                                 "../packages/state-shared/*"
+                                                             ],
+                                          "utils-bet":  [
+                                                            "../packages/utils-bet"
+                                                        ],
+                                          "utils-bet/*":  [
+                                                              "../packages/utils-bet/*"
+                                                          ],
+                                          "utils-book":  [
+                                                             "../packages/utils-book"
+                                                         ],
+                                          "utils-book/*":  [
+                                                               "../packages/utils-book/*"
+                                                           ],
+                                          "utils-event-emitter":  [
+                                                                      "../packages/utils-event-emitter"
+                                                                  ],
+                                          "utils-event-emitter/*":  [
+                                                                        "../packages/utils-event-emitter/*"
+                                                                    ],
+                                          "utils-fetcher":  [
+                                                                "../packages/utils-fetcher"
+                                                            ],
+                                          "utils-fetcher/*":  [
+                                                                  "../packages/utils-fetcher/*"
+                                                              ],
+                                          "utils-layout":  [
+                                                               "../packages/utils-layout"
+                                                           ],
+                                          "utils-layout/*":  [
+                                                                 "../packages/utils-layout/*"
+                                                             ],
+                                          "utils-resize-observer":  [
+                                                                        "../packages/utils-resize-observer"
+                                                                    ],
+                                          "utils-resize-observer/*":  [
+                                                                          "../packages/utils-resize-observer/*"
+                                                                      ],
+                                          "utils-shared":  [
+                                                               "../packages/utils-shared"
+                                                           ],
+                                          "utils-shared/*":  [
+                                                                 "../packages/utils-shared/*"
+                                                             ],
+                                          "utils-slots":  [
+                                                              "../packages/utils-slots"
+                                                          ],
+                                          "utils-slots/*":  [
+                                                                "../packages/utils-slots/*"
+                                                            ],
+                                          "utils-sound":  [
+                                                              "../packages/utils-sound"
+                                                          ],
+                                          "utils-sound/*":  [
+                                                                "../packages/utils-sound/*"
+                                                            ],
+                                          "utils-xstate":  [
+                                                               "../packages/utils-xstate"
+                                                           ],
+                                          "utils-xstate/*":  [
+                                                                 "../packages/utils-xstate/*"
+                                                             ],
+                                          "config-lingui":  [
+                                                                "../packages/config-lingui"
+                                                            ],
+                                          "config-lingui/*":  [
+                                                                  "../packages/config-lingui/*"
+                                                              ],
+                                          "config-storybook":  [
+                                                                   "../packages/config-storybook"
+                                                               ],
+                                          "config-storybook/*":  [
+                                                                     "../packages/config-storybook/*"
+                                                                 ],
+                                          "config-svelte":  [
+                                                                "../packages/config-svelte/index.js"
+                                                            ],
+                                          "config-vite":  [
+                                                              "../packages/config-vite/index.js"
+                                                          ],
+                                          "config-ts":  [
+                                                            "../packages/config-ts/base.json"
+                                                        ],
+                                          "rgs-requests":  [
+                                                               "src/rgs/requests.ts"
+                                                           ],
+                                          "rgs-requests-remote":  [
+                                                                      "../packages/rgs-requests/index.ts"
+                                                                  ],
+                                          "$env/static/public":  [
+                                                                     "src/env/public.ts"
+                                                                 ]
+                                      }
+                        },
+    "include":  [
+                    "src/**/*.ts",
+                    "src/**/*.svelte",
+                    "src/**/*.d.ts",
+                    "../packages/**/*.ts",
+                    "../packages/**/*.svelte"
+                ],
+    "exclude":  [
+                    "src/stories/data/**/*.ts"
+                ]
 }
