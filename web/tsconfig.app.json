@@ -56,7 +56,7 @@
         "../packages/rgs-fetcher/index.ts"
       ],
       "rgs-requests": [
-        "../packages/rgs-requests/index.ts"
+        "src/rgs/requests.ts"
       ],
       "state-shared": [
         "../packages/state-shared/index.ts"
@@ -93,6 +93,24 @@
       ],
       "$env/static/public": [
         "src/env/public.ts"
+      ],
+      "rgs-requests-remote": [
+        "../packages/rgs-requests/index.ts"
+      ],
+      "config-lingui": [
+        "../packages/config-lingui/index.ts"
+      ],
+      "config-storybook": [
+        "../packages/config-storybook/index.ts"
+      ],
+      "config-svelte": [
+        "../packages/config-svelte/index.js"
+      ],
+      "config-vite": [
+        "../packages/config-vite/index.js"
+      ],
+      "config-ts": [
+        "../packages/config-ts/base.json"
       ]
     }
   },

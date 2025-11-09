@@ -1,5 +1,4 @@
 import { locales } from 'config-lingui';
-import { page } from '$app/state';
 
 export type Language = (typeof locales)[number];
 
@@ -14,11 +13,19 @@ export type Key =
 	| 'force'
 ;
 
-const getUrlSearchParam = (key: Key) => page.url.searchParams.get(key);
+const getBrowserUrl = () => {
+	if (typeof window === 'undefined' || typeof window.location === 'undefined') {
+		return new URL('http://localhost');
+	}
+
+	return new URL(window.location.href);
+};
+
+const getUrlSearchParam = (key: Key) => getBrowserUrl().searchParams.get(key);
 
 const lang = () =>
 	getUrlSearchParam('lang') === 'br' ? 'pt' : (getUrlSearchParam('lang') as Language) || 'en';
-const sessionID = () => getUrlSearchParam('sessionID') || '';
+const sessionID = () => getUrlSearchParam('sessionID') || 'debug-session';
 const rgsUrl = () => getUrlSearchParam('rgs_url') || '';
 const force = () => getUrlSearchParam('force') === 'true';
 const social = () => getUrlSearchParam('social') === 'true';
