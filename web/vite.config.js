@@ -34,7 +34,10 @@ const packageAliases = [
 ];
 
 const aliasFromPackages = Object.fromEntries(
-  packageAliases.map((pkg) => [pkg, path.resolve(__dirname, `../packages/${pkg}/index.ts`)])
+  packageAliases.flatMap((pkg) => [
+    [pkg, path.resolve(__dirname, `../packages/${pkg}/index.ts`)],
+    [`${pkg}/*`, path.resolve(__dirname, `../packages/${pkg}/*`)],
+  ])
 );
 
 export default defineConfig({
@@ -52,6 +55,9 @@ export default defineConfig({
   },
   base: './',
   server: {
+    fs: {
+      allow: [__dirname, path.resolve(__dirname, '..')],
+    },
     headers: {
       'Content-Security-Policy': [
         "default-src 'self'",

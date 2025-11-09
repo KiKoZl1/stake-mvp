@@ -1,0 +1,54 @@
+# =========================
+# 📦 NODE / JS ECOSYSTEM
+# =========================
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# =========================
+# 🏗️ BUILD OUTPUTS
+# =========================
+dist/
+build/
+storybook-static/
+.cache/
+.vite/
+out/
+.svelte-kit/
+.turbo/
+.temp/
+.tmp/
+
+# =========================
+# 💻 IDEs & SYSTEM FILES
+# =========================
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# =========================
+# ⚙️ ENV / CONFIG FILES
+# =========================
+.env
+.env.*
+*.local
+
+# =========================
+# 🧩 TESTS / COVERAGE
+# =========================
+coverage/
+*.lcov
+jest-cache/
+jest-results.json
+
+# =========================
+# 🧰 MISC
+# =========================
+*.log
+*.lock
+*.tgz
+*.zip
