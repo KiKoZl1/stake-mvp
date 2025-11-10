@@ -50,7 +50,6 @@
 		})}
 
 		<UiSprite
-			key="buyBonus"
 			{...center}
 			anchor={0.5}
 			width={sizes.width}

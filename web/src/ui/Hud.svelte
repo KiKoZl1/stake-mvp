@@ -1,14 +1,16 @@
-﻿<script lang="ts">
+<script lang="ts">
   import { createEventDispatcher } from 'svelte';
 
-  export let balance = 0;
-  export let bet = 1_000_000;
-  export let lastWin = 0;
-  export let spinning = false;
-  export let autoActive = false;
-  export let onStopAuto: (() => void) | null = null;
-  export let onSpin: (() => void) | null = null;
-  export let onInfo: (() => void) | null = null;
+  const props = $props<{
+    balance?: number;
+    bet?: number;
+    lastWin?: number;
+    spinning?: boolean;
+    autoActive?: boolean;
+    onStopAuto?: (() => void) | null;
+    onSpin?: (() => void) | null;
+    onInfo?: (() => void) | null;
+  }>();
 
   const dispatch = createEventDispatcher();
 
@@ -21,19 +23,26 @@
   const STEP_SMALL = 1_000_000;
   const STEP_BIG = 10_000_000;
 
+  let localBet = props.bet ?? STEP_SMALL;
+  $effect(() => {
+    if (props.bet !== undefined) {
+      localBet = props.bet;
+    }
+  });
+
   function adjustSmall(dir: number) {
-    bet = Math.max(STEP_SMALL, bet + dir * STEP_SMALL);
+    localBet = Math.max(STEP_SMALL, localBet + dir * STEP_SMALL);
   }
 
   function adjustBig(dir: number) {
-    bet = Math.max(STEP_SMALL, bet + dir * STEP_BIG);
+    localBet = Math.max(STEP_SMALL, localBet + dir * STEP_BIG);
   }
 
-  function spin() { onSpin?.(); }
-  function info() { onInfo?.(); }
-  function stopAuto() { onStopAuto?.(); }
-  function toggleMenu() { dispatch('toggleMenu'); }
-  function openAuto() { autoActive ? stopAuto() : dispatch('openAuto'); }
+  const spin = () => props.onSpin?.();
+  const info = () => props.onInfo?.();
+  const stopAuto = () => props.onStopAuto?.();
+  const toggleMenu = () => dispatch('toggleMenu');
+  const openAuto = () => (props.autoActive ?? false) ? stopAuto() : dispatch('openAuto');
   function toggleFullscreen() {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen?.().catch(() => {});
@@ -49,43 +58,43 @@
 
     <div class="stat">
       <span>Balance</span>
-      <output aria-live="polite">{pretty(balance)}</output>
+      <output aria-live="polite">{pretty(props.balance ?? 0)}</output>
     </div>
 
     <div class="stat">
       <span>Win</span>
-      <output aria-live="polite">{pretty(lastWin)}</output>
+      <output aria-live="polite">{pretty(props.lastWin ?? 0)}</output>
     </div>
 
     <div class="stat bet">
       <span>Bet</span>
       <div class="betbox" role="group" aria-label="Ajustar aposta">
-        <button type="button" on:click={() => adjustSmall(-1)} disabled={spinning} aria-label="Diminuir aposta">−</button>
-        <output aria-live="polite">{pretty(bet)}</output>
-        <button type="button" on:click={() => adjustSmall(1)} disabled={spinning} aria-label="Aumentar aposta">+</button>
+        <button type="button" on:click={() => adjustSmall(-1)} disabled={props.spinning} aria-label="Diminuir aposta">-</button>
+        <output aria-live="polite">{pretty(localBet)}</output>
+        <button type="button" on:click={() => adjustSmall(1)} disabled={props.spinning} aria-label="Aumentar aposta">+</button>
       </div>
     </div>
 
     <div class="stepper" aria-label="Ajuste rápido de aposta">
-      <button type="button" on:click={() => adjustBig(1)} disabled={spinning} aria-label="Aumentar aposta em 10">▲</button>
-      <button type="button" on:click={() => adjustBig(-1)} disabled={spinning} aria-label="Diminuir aposta em 10">▼</button>
+      <button type="button" on:click={() => adjustBig(1)} disabled={props.spinning} aria-label="Aumentar aposta em 10">▲</button>
+      <button type="button" on:click={() => adjustBig(-1)} disabled={props.spinning} aria-label="Diminuir aposta em 10">▼</button>
     </div>
 
-    <button class="spin" type="button" on:click={spin} disabled={spinning}>
+    <button class="spin" type="button" on:click={spin} disabled={props.spinning}>
       <span>Spin</span>
-      <small>{spinning ? 'Rolling...' : 'Fire!'}</small>
+      <small>{props.spinning ? 'Rolling...' : 'Fire!'}</small>
     </button>
 
     <button
       class="action auto"
       type="button"
-      aria-pressed={autoActive}
-      class:auto-on={autoActive}
+      aria-pressed={props.autoActive ?? false}
+      class:auto-on={props.autoActive ?? false}
       on:click={openAuto}
-      aria-label={autoActive ? 'Parar auto spin' : 'Abrir auto spin'}
-    >⟳</button>
+      aria-label={(props.autoActive ?? false) ? 'Parar auto spin' : 'Abrir auto spin'}
+    >⚙</button>
 
-    <button class="action fullscreen" type="button" on:click={toggleFullscreen} aria-label="Alternar tela cheia">⤢</button>
+    <button class="action fullscreen" type="button" on:click={toggleFullscreen} aria-label="Alternar tela cheia">⛶</button>
 
     <button class="action info" type="button" on:click={info} aria-label="Info e paytable">i</button>
   </div>

@@ -8,7 +8,7 @@ import { createGetWinLevelDataByWinLevelAlias } from 'utils-shared/winLevel';
 import type { GameType, RawSymbol, SymbolState } from './types';
 import { stateLayoutDerived } from './stateLayout';
 import { winLevelMap } from './winLevelMap';
-import { eventEmitter } from './eventEmitter';
+import { eventEmitter } from '../rgs/eventEmitter';
 import {
 	SYMBOL_SIZE,
 	BOARD_SIZES,

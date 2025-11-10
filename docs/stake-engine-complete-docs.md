@@ -1108,7 +1108,7 @@ pnpm dev
 # Create/modify:
 #   - /src/ui/Hud.svelte
 #   - /src/ui/Reels.svelte
-#   - /src/events/bookEventHandlerMap.ts
+#   - /src/rgs/bookEventHandlerMap.ts
 
 # 4. Test locally
 # Open http://localhost:5173
@@ -1245,4 +1245,3 @@ emitter.subscribe({
   roundComplete: ({ amount }) => showRoundSummary(amount)
 });
 ```
-

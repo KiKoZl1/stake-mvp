@@ -1,7 +1,11 @@
 <script lang="ts" module>
-	import { sound, type MusicName, type SoundEffectName, type SoundName } from '../game/sound';
+	import type { MusicName, SoundEffectName, SoundName } from '../game/sound';
+	import type { BetMode } from '../game/types';
 
 	export type EmitterEventSound =
+		| { type: 'soundBetMode'; betModeKey: BetMode }
+		| { type: 'soundPressGeneral' }
+		| { type: 'soundPressBet' }
 		| { type: 'soundMusic'; name: MusicName }
 		| { type: 'soundOnce'; name: SoundEffectName; forcePlay?: boolean }
 		| { type: 'soundLoop'; name: SoundEffectName }
@@ -19,6 +23,7 @@
 	import { stateBet } from 'state-shared';
 
 	import { getContext } from '../game/context';
+	import { sound } from '../game/sound';
 
 	const context = getContext();
 

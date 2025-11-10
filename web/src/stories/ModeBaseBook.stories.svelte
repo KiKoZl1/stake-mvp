@@ -35,6 +35,7 @@
 		</StoryLocale>
 	</StoryGameTemplate>
 {/snippet}
+{@const storyTemplate = template as unknown as any}
 
 <Story
 	name="random"
@@ -48,5 +49,5 @@
 			await playBet({ ...data, state: data.events });
 		},
 	})}
-	{template}
+	{storyTemplate}
 />

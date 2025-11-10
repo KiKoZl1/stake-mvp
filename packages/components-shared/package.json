@@ -12,26 +12,26 @@
 	},
 	"type": "module",
 	"devDependencies": {
-		"eslint": "9.21.0",
-		"eslint-config-custom": "workspace:*",
-		"config-ts": "workspace:*",
-		"config-vite": "workspace:*",
-		"config-svelte": "workspace:*",
+		"@lingui/core": "5.2.0",
+		"@storybook/addon-svelte-csf": "5.0.10",
+		"@sveltejs/vite-plugin-svelte": "6.2.1",
+		"chromatic": "11.26.1",
 		"config-lingui": "workspace:*",
 		"config-storybook": "workspace:*",
-		"@lingui/core": "5.2.0",
-		"chromatic": "11.26.1",
-		"@storybook/addon-svelte-csf": "5.0.5",
-		"@sveltejs/vite-plugin-svelte": "5.0.3"
+		"config-svelte": "workspace:*",
+		"config-ts": "workspace:*",
+		"config-vite": "workspace:*",
+		"eslint": "9.21.0",
+		"eslint-config-custom": "workspace:*"
 	},
 	"dependencies": {
-		"svelte": "5.20.5",
-		"vite": "6.2.0",
 		"@sveltejs/kit": "2.17.3",
+		"constants-shared": "workspace:*",
 		"rgs-requests": "workspace:*",
-		"utils-shared": "workspace:*",
-		"utils-event-emitter": "workspace:*",
 		"state-shared": "workspace:*",
-		"constants-shared": "workspace:*"
+		"svelte": "5.20.5",
+		"utils-event-emitter": "workspace:*",
+		"utils-shared": "workspace:*",
+		"vite": "7.2.2"
 	}
 }

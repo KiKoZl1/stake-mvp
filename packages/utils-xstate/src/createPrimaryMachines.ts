@@ -6,6 +6,17 @@ import { requestBet, requestForceResult, requestEndRound } from 'rgs-requests';
 
 import type { BaseBet } from './types';
 
+const hasErrorField = (value: unknown): value is { error: unknown } =>
+	typeof value === 'object' && value !== null && 'error' in value;
+
+const hasBalanceField = (
+	value: unknown,
+): value is { balance: { amount: number; currency?: string } } =>
+	typeof value === 'object' && value !== null && 'balance' in value;
+
+const hasRoundField = (value: unknown): value is { round: { state?: unknown[]; mode?: string } } =>
+	typeof value === 'object' && value !== null && 'round' in value;
+
 const handleRequestBet = async ({ onError }: { onError: () => void }) => {
 	try {
 		const data = await requestBet({
@@ -16,11 +27,11 @@ const handleRequestBet = async ({ onError }: { onError: () => void }) => {
 			amount: stateBet.betAmount,
 		});
 
-		if (data?.error) {
+		if (hasErrorField(data) && data.error) {
 			throw data;
 		}
 
-		if (data?.round?.state && data?.round?.state?.length > 0) {
+		if (hasRoundField(data) && data.round?.state && data.round.state.length > 0) {
 			stateBet.wageredBetAmount = stateBet.betAmount;
 
 			return data;
@@ -46,11 +57,11 @@ const handleRequestEndRound = async () => {
 			rgsUrl: stateUrlDerived.rgsUrl(),
 		});
 
-		if (data?.error) {
+		if (hasErrorField(data) && data.error) {
 			throw data;
 		}
 
-		if (data?.balance?.amount !== undefined) {
+		if (hasBalanceField(data) && data.balance?.amount !== undefined) {
 			return data;
 		} else {
 			throw {
@@ -97,7 +108,7 @@ function createPrimaryMachines<TBet extends BaseBet>(options: Options<TBet>) {
 		singleRoundWin: {
 			newGame: async () => {
 				const endRoundData = await handleRequestEndRound();
-				if (endRoundData?.balance) {
+				if (hasBalanceField(endRoundData) && endRoundData.balance) {
 					balanceAmountFromApiHolder = endRoundData.balance.amount;
 				}
 			},
@@ -112,7 +123,7 @@ function createPrimaryMachines<TBet extends BaseBet>(options: Options<TBet>) {
 			newGame: async () => undefined,
 			endGame: async () => {
 				const data = await handleRequestEndRound();
-				if (data?.balance) {
+				if (hasBalanceField(data) && data.balance) {
 					handleUpdateBalance({ balanceAmountFromApi: data.balance.amount });
 					balanceAmountFromApiHolder = null;
 				}
@@ -142,7 +153,7 @@ function createPrimaryMachines<TBet extends BaseBet>(options: Options<TBet>) {
 		const data = await handleRequestBet({ onError: onNewGameError });
 
 		if (data) {
-			if (data.balance) {
+			if (hasBalanceField(data) && data.balance?.amount !== undefined) {
 				handleUpdateBalance({ balanceAmountFromApi: data.balance.amount });
 			}
 
@@ -264,12 +275,12 @@ function createPrimaryMachines<TBet extends BaseBet>(options: Options<TBet>) {
 
 			const data = await FORCE_FUNCTION_MAP[stateForce.forceType]();
 
-			if (data?.error) {
+			if (hasErrorField(data) && data.error) {
 				throw data;
 			}
 
 			if (data?.round?.state && data?.round?.state?.length > 0) {
-				if (data?.balance?.amount !== undefined) {
+				if (hasBalanceField(data) && data.balance?.amount !== undefined) {
 					handleUpdateBalance({ balanceAmountFromApi: data.balance.amount });
 				}
 
@@ -304,3 +315,4 @@ function createPrimaryMachines<TBet extends BaseBet>(options: Options<TBet>) {
 }
 
 export { createPrimaryMachines };
+

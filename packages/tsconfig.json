@@ -157,7 +157,7 @@
                                                             "packages/config-ts/base.json"
                                                         ],
                                           "rgs-requests":  [
-                                                               "packages/rgs-requests/src/rgs-requests.ts"
+                                                               "web/src/rgs/requests.ts"
                                                            ],
                                           "rgs-requests/*":  [
                                                                  "packages/rgs-requests/src/*"
@@ -175,6 +175,7 @@
                     "../packages/**/*.ts",
                     "../packages/**/*.tsx",
                     "../packages/**/*.svelte",
-                    "../packages/**/*.d.ts"
+                    "../packages/**/*.d.ts",
+                    "../types/**/*.d.ts"
                 ]
 }

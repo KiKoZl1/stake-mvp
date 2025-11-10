@@ -5,6 +5,7 @@
                                           "svelte",
                                           "node"
                                       ],
+                            "allowImportingTsExtensions": true,
                             "paths":  {
                                           "components-layout":  [
                                                                     "packages/components-layout"
@@ -160,7 +161,7 @@
                                                             "packages/config-ts/base.json"
                                                         ],
                                           "rgs-requests":  [
-                                                               "packages/rgs-requests/src/rgs-requests.ts"
+                                                               "web/src/rgs/requests.ts"
                                                            ],
                                           "rgs-requests/*":  [
                                                                  "packages/rgs-requests/src/*"

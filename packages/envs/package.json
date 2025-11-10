@@ -9,15 +9,15 @@
 		"lint": "eslint *.ts*"
 	},
 	"devDependencies": {
-		"eslint": "9.21.0",
-		"eslint-config-custom": "workspace:*",
+		"config-svelte": "workspace:*",
 		"config-ts": "workspace:*",
 		"config-vite": "workspace:*",
-		"config-svelte": "workspace:*"
+		"eslint": "9.21.0",
+		"eslint-config-custom": "workspace:*"
 	},
 	"dependencies": {
+		"@sveltejs/kit": "2.17.3",
 		"svelte": "5.20.5",
-		"vite": "6.2.0",
-		"@sveltejs/kit": "2.17.3"
+		"vite": "7.2.2"
 	}
 }

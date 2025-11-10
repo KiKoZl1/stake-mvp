@@ -2,15 +2,15 @@ import type * as PIXI from 'pixi.js';
 import { setContext, getContext, onMount } from 'svelte';
 import * as SPINE_PIXI from '@esotericsoftware/spine-pixi-v8';
 
-import type { App as ContextApp } from './createApp.svelte';
+import type { PixiApp } from './createApp.svelte';
 
 // App context
 const APP_NS = '@@pixi_svelte';
-export function setContextApp(value: ContextApp) {
+export function setContextApp(value: PixiApp) {
 	setContext(APP_NS, value);
 }
 export function getContextApp() {
-	return getContext(APP_NS) as ContextApp;
+	return getContext(APP_NS) as PixiApp;
 }
 
 // Parent context

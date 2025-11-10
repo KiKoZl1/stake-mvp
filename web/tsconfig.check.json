@@ -1,18 +1,19 @@
 {
     "extends":  "./tsconfig.app.json",
-    "compilerOptions":  {
-                            "paths":  {
-
-                                      }
-                        },
     "include":  [
                     "src/**/*.ts",
                     "src/**/*.svelte",
                     "src/**/*.d.ts",
                     "../packages/**/*.ts",
-                    "../packages/**/*.svelte"
+                    "../packages/**/*.svelte",
+    "../types/**/*.d.ts"
                 ],
     "exclude":  [
-                    "src/stories/data/**/*.ts"
+                    "../packages/**/node_modules/**",
+                    "../packages/**/dist/**",
+                    "../packages/**/.svelte-kit/**",
+                    "../packages/**/.storybook/**",
+                    "../packages/**/storybook-static/**",
+                    "../packages/**/build/**"
                 ]
 }

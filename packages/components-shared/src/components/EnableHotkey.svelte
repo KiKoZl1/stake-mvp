@@ -9,8 +9,11 @@
 	const PREVENT_DEFAULT_KEYS = ['Space', 'ArrowUp', 'ArrowDown'];
 	const EXCLUDED_TAGS = ['input', 'textarea', 'select'];
 
-	const getValidElement = (e: KeyboardEvent) =>
-		!EXCLUDED_TAGS.includes(e?.target?.tagName?.toLowerCase());
+	const getValidElement = (e: KeyboardEvent) => {
+		const target = e.target as HTMLElement | null;
+		const tagName = target?.tagName?.toLowerCase() ?? '';
+		return !EXCLUDED_TAGS.includes(tagName);
+	};
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (getValidElement(e)) {

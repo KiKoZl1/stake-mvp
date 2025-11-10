@@ -32,7 +32,6 @@
 		<UiSprite
 			y={-20}
 			anchor={{ x: 0.5, y: 0 }}
-			key="base_ticker"
 			width={UI_BASE_FONT_SIZE * 3 * (326 / 73)}
 			height={UI_BASE_FONT_SIZE * 3}
 			borderRadius={35}
@@ -45,7 +44,6 @@
 		<UiSprite
 			x={-90}
 			anchor={{ x: 0, y: 0.5 }}
-			key="base_ticker"
 			width={UI_BASE_FONT_SIZE * 3 * (326 / 73)}
 			height={UI_BASE_FONT_SIZE * 3}
 			borderRadius={35}

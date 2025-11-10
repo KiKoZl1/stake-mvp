@@ -34,6 +34,7 @@
 		</StoryLocale>
 	</StoryGameTemplate>
 {/snippet}
+{@const storyTemplate = template as unknown as any}
 
 <Story
 	name="reveal"
@@ -42,7 +43,7 @@
 		data: events.reveal,
 		action: async (data) => await playBookEvent(data, { bookEvents: [] }),
 	})}
-	{template}
+	{storyTemplate}
 />
 
 <Story
@@ -52,7 +53,7 @@
 		data: events.setTotalWin,
 		action: async (data) => await playBookEvent(data, { bookEvents: [] }),
 	})}
-	{template}
+	{storyTemplate}
 />
 
 <Story
@@ -62,7 +63,7 @@
 		data: events.freeSpinTrigger,
 		action: async (data) => await playBookEvent(data, { bookEvents: [] }),
 	})}
-	{template}
+	{storyTemplate}
 />
 
 <Story
@@ -72,7 +73,7 @@
 		data: events.updateFreeSpin,
 		action: async (data) => await playBookEvent(data, { bookEvents: [] }),
 	})}
-	{template}
+	{storyTemplate}
 />
 
 <Story
@@ -82,7 +83,7 @@
 		data: events.winInfo,
 		action: async (data) => await playBookEvent(data, { bookEvents: [] }),
 	})}
-	{template}
+	{storyTemplate}
 />
 
 <Story
@@ -92,7 +93,7 @@
 		data: events.setWin,
 		action: async (data) => await playBookEvent(data, { bookEvents: [] }),
 	})}
-	{template}
+	{storyTemplate}
 />
 
 <Story
@@ -102,7 +103,7 @@
 		data: events.freeSpinEnd,
 		action: async (data) => await playBookEvent(data, { bookEvents: [] }),
 	})}
-	{template}
+	{storyTemplate}
 />
 
 <Story
@@ -112,5 +113,5 @@
 		data: events.finalWin,
 		action: async (data) => await playBookEvent(data, { bookEvents: [] }),
 	})}
-	{template}
+	{storyTemplate}
 />

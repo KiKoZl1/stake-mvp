@@ -5,12 +5,12 @@ import { stateBet, stateUi } from 'state-shared';
 import { sequence } from 'utils-shared/sequence';
 
 import { eventEmitter } from './eventEmitter';
-import { playBookEvent } from './utils';
-import { winLevelMap, type WinLevel, type WinLevelData } from './winLevelMap';
-import { stateGame, stateGameDerived } from './stateGame.svelte';
-import type { BookEvent, BookEventOfType, BookEventContext } from './typesBookEvent';
-import type { Position } from './types';
-import config from './config';
+import { playBookEvent } from '../game/utils';
+import { winLevelMap, type WinLevel, type WinLevelData } from '../game/winLevelMap';
+import { stateGame, stateGameDerived } from '../game/stateGame.svelte';
+import type { BookEvent, BookEventOfType, BookEventContext } from '../game/typesBookEvent';
+import type { Position } from '../game/types';
+import { getPaddingBoard } from '../game/paddingBoard';
 
 const winLevelSoundsPlay = ({ winLevelData }: { winLevelData: WinLevelData }) => {
 	if (winLevelData?.alias === 'max') eventEmitter.broadcastAsync({ type: 'uiHide' });
@@ -28,7 +28,6 @@ const winLevelSoundsPlay = ({ winLevelData }: { winLevelData: WinLevelData }) =>
 const winLevelSoundsStop = () => {
 	eventEmitter.broadcast({ type: 'soundStop', name: 'sfx_bigwin_coinloop' });
 	if (stateBet.activeBetModeKey === 'SUPERSPIN' || stateGame.gameType === 'freegame') {
-		// check if SUPERSPIN, when finishing a bet.
 		eventEmitter.broadcast({ type: 'soundMusic', name: 'bgm_freespin' });
 	} else {
 		eventEmitter.broadcast({ type: 'soundMusic', name: 'bgm_main' });
@@ -55,7 +54,7 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 		stateGame.gameType = bookEvent.gameType;
 		await stateGameDerived.enhancedBoard.spin({
 			revealEvent: bookEvent,
-			paddingBoard: config.paddingReels[bookEvent.gameType],
+			paddingBoard: getPaddingBoard(bookEvent.gameType),
 		});
 		eventEmitter.broadcast({ type: 'soundScatterCounterClear' });
 	},
@@ -69,10 +68,8 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 		stateBet.winBookEventAmount = bookEvent.amount;
 	},
 	freeSpinTrigger: async (bookEvent: BookEventOfType<'freeSpinTrigger'>) => {
-		// animate scatters
 		eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_scatter_win_v2' });
 		await animateSymbols({ positions: bookEvent.positions });
-		// show free spin intro
 		eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_superfreespin' });
 		await eventEmitter.broadcastAsync({ type: 'uiHide' });
 		await eventEmitter.broadcastAsync({ type: 'transition' });
@@ -149,7 +146,6 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 		});
 	},
 
-
 	freeSpinEnd: async (bookEvent: BookEventOfType<'freeSpinEnd'>) => {
 		const winLevelData = winLevelMap[bookEvent.winLevel as WinLevel];
 
@@ -190,15 +186,14 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 		winLevelSoundsStop();
 		eventEmitter.broadcast({ type: 'winHide' });
 	},
-	finalWin: async (bookEvent: BookEventOfType<'finalWin'>) => {
-		// Do nothing
+	finalWin: async (_bookEvent: BookEventOfType<'finalWin'>) => {
+		// Stake Engine will send finalWin to indicate the book is done.
 	},
-	// customised
 	createBonusSnapshot: async (bookEvent: BookEventOfType<'createBonusSnapshot'>) => {
 		const { bookEvents } = bookEvent;
 
 		function findLastBookEvent<T>(type: T) {
-			return _.findLast(bookEvents, (bookEvent) => bookEvent.type === type) as
+			return _.findLast(bookEvents, (candidate) => candidate.type === type) as
 				| BookEventOfType<T>
 				| undefined;
 		}

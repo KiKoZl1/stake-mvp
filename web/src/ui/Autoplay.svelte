@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
-  export let open = false;
+  const props = $props<{ open?: boolean }>();
 
   const dispatch = createEventDispatcher();
 
@@ -26,13 +26,13 @@
   }
 
   onMount(() => {
-    if (open) setTimeout(() => (modalEl as HTMLDivElement)?.focus(), 0);
+    if (props.open) setTimeout(() => (modalEl as HTMLDivElement)?.focus(), 0);
   });
 
   let modalEl: HTMLDivElement;
 </script>
 
-{#if open}
+{#if props.open}
 <div class="modal" role="dialog" aria-modal="true" aria-label="Autoplay"
      tabindex="0" on:keydown={onKey} bind:this={modalEl}
      on:click|self={close}>

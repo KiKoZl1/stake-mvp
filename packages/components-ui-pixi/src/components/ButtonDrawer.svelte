@@ -59,7 +59,6 @@
 <Button {...props} {sizes} {onpress} {disabled} alpha={disabled ? 0.5 : 1}>
 	{#snippet children({ center })}
 		<UiSprite
-			key="base_mobile_drawer"
 			{...center}
 			anchor={0.5}
 			width={sizes.width}

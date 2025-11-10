@@ -1,5 +1,10 @@
-export default {
+import type { BookEvent } from '../../game/typesBookEvent';
+
+type BookEventMap = Record<string, BookEvent>;
+
+const bonusEvents: BookEventMap = {
 	reveal: {
+		index: 0,
 		type: 'reveal',
 		board: [
 			[
@@ -93,14 +98,17 @@ export default {
 		anticipation: [0, 0, 0, 0, 0],
 	},
 	setTotalWin: {
+		index: 1,
 		type: 'setTotalWin',
 		amount: 1000,
 	},
 	finalWin: {
+		index: 2,
 		type: 'finalWin',
 		amount: 0,
 	},
 	freeSpinTrigger: {
+		index: 3,
 		type: 'freeSpinTrigger',
 		totalFs: 12,
 		positions: [
@@ -123,11 +131,13 @@ export default {
 		],
 	},
 	updateFreeSpin: {
+		index: 4,
 		type: 'updateFreeSpin',
 		amount: 1,
 		total: 12,
 	},
 	winInfo: {
+		index: 5,
 		type: 'winInfo',
 		totalWin: 400,
 		wins: [
@@ -186,13 +196,17 @@ export default {
 		],
 	},
 	setWin: {
+		index: 6,
 		type: 'setWin',
 		amount: 400,
 		winLevel: 4,
 	},
 	freeSpinEnd: {
+		index: 7,
 		type: 'freeSpinEnd',
 		amount: 400,
 		winLevel: 2,
 	},
 };
+
+export default bonusEvents;

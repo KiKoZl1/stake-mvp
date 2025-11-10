@@ -17,7 +17,7 @@
 	import { stateGame, stateGameDerived } from '../game/stateGame.svelte';
 	import Game from '../components/Game.svelte';
 	import { setContext } from '../game/context';
-	import { eventEmitter } from '../game/eventEmitter';
+import { eventEmitter } from '../rgs/eventEmitter';
 	import config from '../game/config';
 
 	setContext();

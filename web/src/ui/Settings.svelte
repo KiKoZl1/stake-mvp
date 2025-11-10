@@ -1,20 +1,39 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
-  export let open = false;
-  export let music = 0.6;
-  export let sfx = 0.9;
-  export let muted = false;
+
+  const props = $props<{ open?: boolean; music?: number; sfx?: number; muted?: boolean }>();
 
   const dispatch = createEventDispatcher();
-  function setAll(){ dispatch('change', { music, sfx, muted }); }
-  function close(){ dispatch('close'); }
-  function onKey(e:KeyboardEvent){ if (e.key === 'Escape') close(); }
+  const setAll = () =>
+    dispatch('change', { music: musicValue, sfx: sfxValue, muted: mutedValue });
+  const close = () => dispatch('close');
+  const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+
+  let visible = props.open ?? false;
+  let musicValue = props.music ?? 0.6;
+  let sfxValue = props.sfx ?? 0.9;
+  let mutedValue = props.muted ?? false;
+
+  $effect(() => {
+    if (props.open !== undefined) visible = props.open;
+  });
+  $effect(() => {
+    if (props.music !== undefined) musicValue = props.music;
+  });
+  $effect(() => {
+    if (props.sfx !== undefined) sfxValue = props.sfx;
+  });
+  $effect(() => {
+    if (props.muted !== undefined) mutedValue = props.muted;
+  });
 
   let modalEl: HTMLDivElement;
-  onMount(()=>{ if (open) setTimeout(()=>modalEl?.focus(),0); });
+  onMount(() => {
+    if (visible) setTimeout(() => modalEl?.focus(), 0);
+  });
 </script>
 
-{#if open}
+{#if visible}
 <div class="modal" role="dialog" aria-modal="true" aria-label="Configurações de áudio"
      tabindex="-1" bind:this={modalEl} on:keydown={onKey} on:click|self={close}>
   <div class="panel">
@@ -29,21 +48,21 @@
     <div class="row switch">
       <span id="lbl-muted">Mudo geral</span>
       <label class="toggle" for="mute-toggle">
-        <input id="mute-toggle" type="checkbox" bind:checked={muted} on:change={setAll}>
+        <input id="mute-toggle" type="checkbox" bind:checked={mutedValue} on:change={setAll}>
         <span class="slider"></span>
       </label>
     </div>
 
     <label class="row" for="slider-music">
       <span id="lbl-music">Música</span>
-      <input id="slider-music" type="range" min="0" max="1" step="0.01" bind:value={music} on:input={setAll}>
-      <span class="val">{Math.round(music*100)}%</span>
+      <input id="slider-music" type="range" min="0" max="1" step="0.01" bind:value={musicValue} on:input={setAll}>
+      <span class="val">{Math.round(musicValue * 100)}%</span>
     </label>
 
     <label class="row" for="slider-sfx">
       <span id="lbl-sfx">Efeitos (SFX)</span>
-      <input id="slider-sfx" type="range" min="0" max="1" step="0.01" bind:value={sfx} on:input={setAll}>
-      <span class="val">{Math.round(sfx*100)}%</span>
+      <input id="slider-sfx" type="range" min="0" max="1" step="0.01" bind:value={sfxValue} on:input={setAll}>
+      <span class="val">{Math.round(sfxValue * 100)}%</span>
     </label>
 
     <footer>

@@ -15,7 +15,7 @@ export type EmitterEventGame =
 	| EmitterEventFreeSpinIntro
 	| EmitterEventFreeSpinCounter
 	| EmitterEventFreeSpinOutro
-\t| EmitterEventGlobalMultiplier
-\t| EmitterEventSound
+	| EmitterEventGlobalMultiplier
+	| EmitterEventSound
 	| EmitterEventTransition;
 

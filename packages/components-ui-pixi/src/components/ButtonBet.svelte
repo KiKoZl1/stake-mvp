@@ -21,7 +21,6 @@
 			{#snippet children({ center, hovered })}
 				<Container {...center}>
 					<UiSprite
-						key="bet"
 						width={sizes.width}
 						height={sizes.height}
 						anchor={0.5}

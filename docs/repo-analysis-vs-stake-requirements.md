@@ -793,7 +793,7 @@ export const gameMachine = setup({
 ### 3. Implement Correct EventEmitter
 
 ```typescript
-// packages/events/emitter.ts
+// web/src/rgs/eventEmitter.ts
 type UIEvent = 
   | { type: 'reelsStop'; board: string[][] }
   | { type: 'winCounterTo'; amount: number }

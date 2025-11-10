@@ -1,23 +1,30 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
   const dispatch = createEventDispatcher();
-  export let open = true;
+  const props = $props<{ open?: boolean }>();
 
   let dontShow = false;
   const KEY = 'merica_intro_ack_v1';
+  let visible = props.open ?? true;
+
+  $effect(() => {
+    if (props.open !== undefined) {
+      visible = props.open;
+    }
+  });
 
   onMount(() => {
-    if (localStorage.getItem(KEY) === '1') open = false;
+    if (localStorage.getItem(KEY) === '1') visible = false;
   });
 
   function start() {
     if (dontShow) localStorage.setItem(KEY,'1');
     dispatch('start');
-    open = false;
+    visible = false;
   }
 </script>
 
-{#if open}
+{#if visible}
 <div class="intro">
   <div class="card">
     <h1>’MERICA: Brainrot Bonanza</h1>

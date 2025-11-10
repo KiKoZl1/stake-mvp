@@ -21,7 +21,41 @@ const DEFAULT_BET_LEVELS = [
   10_000_000,
 ];
 
-const shouldUseDebug = (rgsUrl?: string) => isDebug() || !rgsUrl;
+const sanitizeString = (value?: string | null) => value?.trim() ?? '';
+const sanitizeUpper = (value?: string | null) => sanitizeString(value).toUpperCase();
+const shouldUseDebug = (rgsUrl?: string) => isDebug() || !sanitizeString(rgsUrl);
+
+const ensureSessionID = (sessionID: string | undefined, debugMode: boolean) => {
+  const sanitized = sanitizeString(sessionID);
+  if (sanitized && sanitized !== 'debug-session') return sanitized;
+  if (debugMode) return sanitized || 'debug-session';
+  throw new Error('Missing required query param "sessionID".');
+};
+
+const ensureRgsUrl = (rgsUrl: string | undefined, debugMode: boolean) => {
+  const sanitized = sanitizeString(rgsUrl);
+  if (sanitized) return sanitized;
+  if (debugMode) return '';
+  throw new Error('Missing required query param "rgs_url".');
+};
+
+const ensureLanguage = (language?: string) => sanitizeString(language) || 'en';
+const ensureCurrency = (currency?: string) => sanitizeUpper(currency) || 'USD';
+const ensureMode = (mode?: string) => sanitizeUpper(mode) || 'BASE';
+
+const ensureAmount = (amount?: number) => {
+  if (typeof amount !== 'number' || Number.isNaN(amount) || amount < 0) {
+    throw new Error('Bet amount must be a number greater than or equal to 0.');
+  }
+  return amount;
+};
+
+const ensureEventIndex = (eventIndex?: number): number => {
+  if (eventIndex === undefined || !Number.isInteger(eventIndex) || Number(eventIndex) < 0) {
+    throw new Error('eventIndex must be a non-negative integer.');
+  }
+  return eventIndex;
+};
 
 const createMockAuthenticateResponse = () => ({
   balance: {
@@ -53,24 +87,38 @@ const createMockAuthenticateResponse = () => ({
 });
 
 export const requestAuthenticate = async (options: AuthenticateOptions) => {
-  if (!shouldUseDebug(options.rgsUrl)) {
-    return remote.requestAuthenticate(options);
+  const debugMode = shouldUseDebug(options.rgsUrl);
+  const sessionID = ensureSessionID(options.sessionID, debugMode);
+  const language = ensureLanguage(options.language);
+
+  if (!debugMode) {
+    const rgsUrl = ensureRgsUrl(options.rgsUrl, false);
+    return remote.requestAuthenticate({ ...options, sessionID, language, rgsUrl });
   }
 
   return createMockAuthenticateResponse();
 };
 
 export const requestEndRound = async (options: EndRoundOptions) => {
-  if (!shouldUseDebug(options.rgsUrl)) {
-    return remote.requestEndRound(options);
+  const debugMode = shouldUseDebug(options.rgsUrl);
+  const sessionID = ensureSessionID(options.sessionID, debugMode);
+
+  if (!debugMode) {
+    const rgsUrl = ensureRgsUrl(options.rgsUrl, false);
+    return remote.requestEndRound({ ...options, sessionID, rgsUrl });
   }
 
   return { ok: true };
 };
 
 export const requestEndEvent = async (options: EndEventOptions) => {
-  if (!shouldUseDebug(options.rgsUrl)) {
-    return remote.requestEndEvent(options);
+  const debugMode = shouldUseDebug(options.rgsUrl);
+  const sessionID = ensureSessionID(options.sessionID, debugMode);
+  const eventIndex = ensureEventIndex(options.eventIndex);
+
+  if (!debugMode) {
+    const rgsUrl = ensureRgsUrl(options.rgsUrl, false);
+    return remote.requestEndEvent({ ...options, sessionID, eventIndex, rgsUrl });
   }
 
   return { ok: true };
@@ -78,31 +126,39 @@ export const requestEndEvent = async (options: EndEventOptions) => {
 
 export const requestForceResult = async (options: ForceResultOptions) => {
   if (!shouldUseDebug(options.rgsUrl)) {
-    return remote.requestForceResult(options);
+    const rgsUrl = ensureRgsUrl(options.rgsUrl, false);
+    const mode = ensureMode(options.mode);
+    return remote.requestForceResult({ ...options, mode, rgsUrl });
   }
 
   return { round: null };
 };
 
 export const requestBet = async (options: BetOptions) => {
-  if (!shouldUseDebug(options.rgsUrl)) {
-    return remote.requestBet(options);
+  const debugMode = shouldUseDebug(options.rgsUrl);
+  const sessionID = ensureSessionID(options.sessionID, debugMode);
+  const currency = ensureCurrency(options.currency);
+  const mode = ensureMode(options.mode);
+  const amount = ensureAmount(options.amount);
+
+  if (!debugMode) {
+    const rgsUrl = ensureRgsUrl(options.rgsUrl, false);
+    return remote.requestBet({ ...options, sessionID, currency, mode, amount, rgsUrl });
   }
 
   const { round } = await debugPlay();
 
   const mockRound: BetType<any> = {
-    id: round.id ?? 'debug-round',
-    amount: options.amount * API_AMOUNT_MULTIPLIER,
+    amount: amount * API_AMOUNT_MULTIPLIER,
     payout: 0,
     payoutMultiplier: 0,
     active: false,
     state: round.events ?? [],
-    mode: options.mode ?? 'BASE',
-    event: null,
+    mode,
+    event: undefined,
   };
 
   return { round: mockRound };
 };
 
-export * from 'rgs-requests-remote';
+export type { BetType } from 'rgs-requests-remote';

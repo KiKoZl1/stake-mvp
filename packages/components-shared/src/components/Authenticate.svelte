@@ -20,7 +20,7 @@
 			});
 
 			// error
-			if (authenticateData?.error) throw authenticateData;
+			if ('error' in authenticateData && authenticateData.error) throw authenticateData;
 
 			// balance
 			if (authenticateData?.balance) {

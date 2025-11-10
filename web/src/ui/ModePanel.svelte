@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
-  export let open = false;
+
+  const props = $props<{ open?: boolean }>();
 
   const dispatch = createEventDispatcher();
 
@@ -16,16 +17,22 @@
     { key:'super_bonus', name:'Super Bônus', desc:'Ativa Free Spins (6 scatters), x600.00', cost:600.00 },
   ];
 
-  function select(key:string){ dispatch('mode', { mode:key }); }
-  function buy(key:string){ dispatch('buy', { mode:key }); }
-  function close(){ dispatch('close'); }
-  function onKey(e:KeyboardEvent){ if (e.key==='Escape') close(); }
+  const select = (key: string) => dispatch('mode', { mode:key });
+  const buy = (key: string) => dispatch('buy', { mode:key });
+  const close = () => dispatch('close');
+  const onKey = (e: KeyboardEvent) => { if (e.key==='Escape') close(); };
+
+  let visible = props.open ?? false;
+
+  $effect(() => {
+    if (props.open !== undefined) visible = props.open;
+  });
 
   let modalEl: HTMLDivElement;
-  onMount(()=>{ if(open) setTimeout(()=>modalEl?.focus(),0); });
+  onMount(() => { if (visible) setTimeout(() => modalEl?.focus(), 0); });
 </script>
 
-{#if open}
+{#if visible}
 <div class="modal" role="dialog" aria-modal="true" aria-label="Modos e bonus buy"
      tabindex="-1" bind:this={modalEl} on:keydown={onKey} on:click|self={close}>
   <div class="panel">
@@ -49,7 +56,7 @@
               </div>
               <div class="footer">
                 <span class="cost" aria-label="Multiplicador de custo">x{m.cost.toFixed(2)}</span>
-                <button type="button" on:click={()=>select(m.key)}>Selecionar</button>
+                <button type="button" on:click={() => select(m.key)}>Selecionar</button>
               </div>
             </article>
           {/each}
@@ -67,7 +74,7 @@
               </div>
               <div class="footer">
                 <span class="cost">x{b.cost.toFixed(2)}</span>
-                <button type="button" class="buy" on:click={()=>buy(b.key)}>Comprar</button>
+                <button type="button" class="buy" on:click={() => buy(b.key)}>Comprar</button>
               </div>
             </article>
           {/each}

@@ -3,7 +3,7 @@ import { setContextXstate, getContextXstate } from 'utils-xstate';
 import { setContextLayout, getContextLayout } from 'utils-layout';
 import { setContextApp, getContextApp } from 'pixi-svelte';
 
-import { eventEmitter, type EmitterEvent } from './eventEmitter';
+import { eventEmitter, type EmitterEvent } from '../rgs/eventEmitter';
 import { stateXstate, stateXstateDerived } from './stateXstate';
 import { stateLayout, stateLayoutDerived } from './stateLayout';
 import { stateApp } from './stateApp';

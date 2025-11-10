@@ -1,0 +1,1 @@
+declare module '@lingui/conf' {\n  export interface LinguiConfig {\n    fallbackLocales?: Record<string, string>;\n    sourceLocale?: string;\n    locales?: readonly string[] | string[];\n    [key: string]: any;\n  }\n}\n
