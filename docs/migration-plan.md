@@ -1,89 +1,89 @@
-# Migration Plan - LINES to Stake MVP
+﻿# Migration Plan — LINES → Stake MVP
 
-This document tracks the full migration of the LINES slot template into the `stake-mvp` workspace. It is the single source of truth while we finish the port and turn this repo into our reusable slot template.
+This document is the canonical timeline for migrating the LINES template into the stake-mvp workspace. Every time we complete or reprioritize work, update this plan so any teammate (or chatbot) can reconstruct context quickly.
 
-## 1. Context & Vision
-- **Goal**: run the complete LINES experience (UI, gameplay loop, assets, tooling) inside `C:\dev\stake-mvp` using the existing math SDK and local RGS debug flow.
-- **Workspace**: all commands/edits happen strictly under `C:\dev\stake-mvp` so the repository remains consistent with VS Code and the user's tooling.
-- **Constraints**:
-  - Keep the math SDK (`/math`) intact and keep supporting local `src/rgs/debug.ts` simulations.
-  - Avoid depending on TESTESDK once the copy is complete; everything must live in this repo.
-  - Prepare the repo so future games reuse this codebase by swapping only art/assets.
-- **Deliverable**: a Vite/Svelte project that mirrors LINES behaviour, passes Storybook checks, and ships with documentation explaining how to reskin it.
+---
 
-## 2. What Was Imported
-| Area | Source in LINES | Destination here | Notes |
+## 1. Scope & Vision
+- **Objective**: run the entire LINES experience inside web/ (Svelte runes + PIXI) reusing the math SDK, debug fixtures, and shared packages.
+- **Workspace**: all development happens under C:/dev/stake-mvp (monorepo with web/, packages/, math/, shared/).
+- **Invariants**:
+  - /math stays untouched so regulation/math audits remain valid.
+  - src/rgs/debug.ts must keep parity with the legacy TESTESDK knobs (scenario, book selection, deterministic seeds).
+  - The repo must remain template-able: one command to scaffold a skin, no TESTESDK hard-coupling.
+- **Deliverables**: working Vite/Svelte build, coherent Storybook, reproducible dev env, documentation bundle (README.md, docs/architecture.md, docs/debug.md, this plan).
+
+---
+
+## 2. Source Mapping (TESTESDK → stake-mvp)
+| Surface | Legacy location | stake-mvp target | Notes |
 | --- | --- | --- | --- |
-| Packages | `TESTESDK/packages/*` | `packages/*` | Components, utils, state stores, Pixi helpers, configs |
-| Web app | `apps/lines/src/*` | `web/src/*` | Components, game logic, i18n, stories, RGS helpers |
-| Assets | `apps/lines/static/assets` | `web/src/assets` | Sprites, spines, bitmap fonts, audio, loaders |
-| Tooling | `config-*`, `.storybook/`, Lingui, Turbo | replicated | All configs copied so aliases/scripts match |
-| Scripts | `apps/lines/package.json` | `web/package.json` | Dev/build/storybook scripts now target local packages |
+| Shared packages | packages/* | packages/* | Components, utils, states, configs, fetched verbatim. |
+| Game app | apps/lines/src/** | web/src/** | PIXI scenes, Svelte components, RGS glue, localization. |
+| Assets | apps/lines/static/assets/** | web/src/assets/** | Sprite sheets, background videos, bitmap fonts, audio. |
+| Tooling | config-*, .storybook | packages/config-*, web/.storybook/** | Turbo, Vite, Svelte, Storybook presets. |
+| Fixtures & stories | apps/lines/src/stories/** | web/src/stories/** | Books, paylines, debug data reused by RGS debug mode. |
+
+---
 
 ## 3. Completed Milestones
-### 3.1 Template bootstrap
-- `web/src/App.svelte` matches the LINES bootstrap (GlobalStyle, Authenticate, LoadI18n, Game).
-- All LINES packages/components/game/i18n/stories live in this repo; imports resolve via aliases in `web/vite.config.js` and `web/tsconfig.app.json`.
-- `src/assets/**` contains the full asset manifest and `src/game/assets.ts` exposes URLs for spritesheets, spines, bitmap fonts, and audio.
+1. **Bootstrap** — web/src/App.svelte mirrors the legacy entry point (global styles, auth gate, i18n loader, Game root). TypeScript aliases live in 	sconfig.app.json + vite.config.js.
+2. **Asset pipeline** — src/stage/createStage.ts consumes the production manifest (symbols, reel strips, background layers). CSP updated to allow data/blob URLs required by PIXI loaders.
+3. **Debug parity** — src/rgs/debug.ts reads the same book fixtures as Storybook, honoring scenario, bookId, bookIndex, 
+andom, and forceScatter. CLI/docs list every flag.
+4. **Packages imported** — every components-*, utils-*, state-*, config-*, 
+gs-* package lives inside the monorepo. 
+gs-requests auto-redirects to debug endpoints when no 
+gs_url is provided.
+5. **Storybook wiring** — web/.storybook/main.ts + preview.ts extend packages/config-storybook, patched for Vite + Svelte runes. Stories render real PIXI canvases with shared stores.
+6. **Gameplay sync** — bookEventHandlerMap covers multiplier updates, scatter anticipation, background transitions. stateGame owns the multiplier panel; GlobalMultiplier, Win, Background reproduce the LINES choreography.
+7. **Editor configuration** — .vscode/settings.json in the repo root sets svelte.language-server.tsconfigPath to ./web/tsconfig.app.json, ensuring aliases resolve inside .svelte files.
+8. **Documentation kickoff** — Outline for README, architecture, and debug docs defined; this migration plan is tracked in git and referenced by onboarding.
 
-### 3.2 Tooling alignment
-- `web/package.json` upgraded to the same dependency set as LINES (Svelte 5.39, Vite 7, Storybook 9, Lingui, pixi-svelte, etc.).
-- `svelte.config.js` uses runes and re-exports `config-svelte`.
-- `vite.config.js` builds alias maps for every package (`components-*`, `utils-*`, `state-*`, configs, `$env/static/public`).
-- `$env/static/public` shim lives at `web/src/env/public.ts`; `packages/state-shared/src/stateUrl.svelte.ts` reads `window.location` instead of `$app/state`.
+---
 
-### 3.3 Runtime integration
-- `web/src/rgs/requests.ts` routes to `rgs-requests-remote` when `rgs_url` exists or falls back to `src/rgs/debug.ts` for local play.
-- `src/stage/createStage.ts` loads symbol/reel spritesheets with `pixi.Assets`, applies the LINES graphics, and disables worker usage to respect CSP.
-- CSP now allows `data:` / `blob:` for `connect-src`, `img-src`, and `font-src`, so PIXI can load inline textures/audio without violations.
+## 4. Open Tracks & Backlog
 
-### 3.4 Repository structure
-- Every shared package now lives under `/packages`; no dependency on TESTESDK remains.
-- Turbo/PNPM configs reference the local packages (workspace).
-- This document (`docs/migration-plan.md`) acts as the ongoing log.
+### 4.1 Game Features & Events
+- Audit bookEventHandlerMap against the production event list (freeSpinRetrigger, BonusBuy, 
+esume, jackpot) and add missing handlers.
+- Ensure createPlayBookUtils never logs "Missing bookEventHandler".
+- Port outstanding UI widgets (hotkeys, quick bet, modals) and document ownership in docs/architecture.md.
 
-### 3.5 Debug tooling
-- `src/rgs/debug.ts` now loads the actual books from `web/src/stories/data/{base,bonus}_books.ts`, so the local simulator feeds the same `BookEvent` stream as production. By default (`npm run dev` + `?debug=1`) it randomly picks both scenario (base/bonus) and book. Override it with:
-  - `scenario=base|bonus|random` (`random` forces a new draw each time)
-  - `bookId=<id>` or `bookIndex=<index>` to lock a specific book
-  - `random=1` to shuffle books even when a specific scenario was provided
+### 4.2 Storybook & Tooling
+- 
+pm run storybook still needs TS alias + CSS order fixes; follow the checklist that will live in docs/debug.md.
+- 
+pm run check is slow because packages are consumed from source — decide whether to emit dist/ builds or create lighter tsconfig layers.
+- Align @storybook/addon-svelte-csf versions with the PIXI controls so regression tests stay deterministic.
 
-### 3.6 Storybook config
-- `.storybook/main.ts` and `preview.ts` now re-export the shared `config-storybook` presets, so Storybook uses the same settings as the LINES template.
+### 4.3 RGS / Math Integration
+- Run sessions against a real 
+gs_url to confirm round lifecycle, wallet updates, and state synchronization (stateBet, stateUi, stateSession).
+- Keep docs/debug.md updated whenever new query params, feature flags, or sample books are introduced.
+- Document math build/QA responsibilities (what lives under /math, how to request RNG seeds).
 
-### 3.7 Gameplay polish
-- Added `updateGlobalMult` handling: `stateGame` tracks the current global multiplier + visibility, `bookEventHandlerMap` emits the UI events, and the `GlobalMultiplier` component is mounted so bonus rounds mirror the template behaviour (including the reset after the free-spin outro).
+### 4.4 Template Hardening
+- Finalize directory ownership guidelines (who edits packages/, who owns web/, how skins override assets) — cross-reference in docs/architecture.md.
+- Author a “skinning cookbook” describing how to swap assets, typography, voice overs, and localized strings without touching core math.
 
-## 4. Outstanding Gaps (Detailed)
-### 4.1 Book events & emitter wiring
-- `updateGlobalMult` is covered, but we still need to watch the console when spinning against live RGS data in case new event types appear.
-- Capture any new book-event signatures and mirror the original LINES handlers so `createPlayBookUtils` never hits the "Missing bookEventHandler" log.
-- Keep validating that the shared contexts (BoardContext, event emitter, hotkeys, modals) stay initialised inside `App.svelte` during autoplay, bonus buy, and resume scenarios.
+---
 
-### 4.2 Storybook & developer tooling
-- `.storybook` config from LINES still needs to be wired into `web/.storybook/` and scripts adjusted to use `config-storybook`.
-- `npm run storybook` currently spins up the old placeholder setup (or fails). Need to copy `main.ts`, `preview.ts`, and ensure the Vite aliases match the app.
-- `npm run check` fails because the config packages are only referenced via workspace; decide whether to add them as `file:` devDependencies or limit checks to `web/src`.
+## 5. Next Concrete Actions
+1. **Handlers & contexts** — finish mapping book events, validate providers (BoardContext, event emitter, overlays, hotkey manager).
+2. **Storybook** — make 
+pm run storybook green end-to-end, document the resolution steps in README + debug doc.
+3. **Build & check** — settle on a build strategy for shared packages (prebuilt artifacts vs. tsconfig project references) so 
+pm run check and 
+pm run build pass locally and in CI.
+4. **QA loop** — run full rounds via RGS and the local debug server, capture logs/screenshots, and archive them in docs/debug.md.
+5. **Living docs** — keep README, architecture, debug, and this plan synchronized whenever a workflow changes.
 
-### 4.3 QA & math integration
-- After book handlers exist, validate the full loop: start spin via UI, receive outcomes from `src/rgs/debug.ts`, update balances (`state-shared/stateBet`), and stop animations.
-- No automated tests exist yet; plan smoke/snapshot tests around the debug flow once the UI stabilises.
+---
 
-### 4.4 Template hardening
-- Once the game is functional, reorganise packages/components/utils so the repo becomes an easy-to-skin template (document dependencies, add diagrams, etc.).
-- Document how to clone the repo and build a new game by swapping assets + translations.
-
-## 5. Next Actions (Short Term)
-1. **Book handlers**: complete `web/src/game/bookEventHandlerMap.ts`, `playBookEvent`, and register the handler map so spins finish.
-2. **Emitter/context wiring**: verify `components-shared` providers (BoardContext, event emitter, modals, hotkeys) are active after the new handlers are in place.
-3. **RGS validation**: run both debug (`src/rgs/debug.ts`) and remote (`rgs_url`) flows to confirm spins settle and balances update.
-4. **Storybook enablement**: copy `.storybook` config from LINES, hook it into `web/.storybook`, and make sure `npm run storybook` serves the migrated stories.
-
-## 6. Future Cleanup & Template Work
-- Reorganise folders (group components/utils, document alias ownership) once gameplay + tooling are stable.
-- Write how-to guides: deploying, running tests, creating a new game skin, onboarding math outputs.
-
-## 7. Tracking Progress
-- Update this file whenever a milestone completes or a new blocker is discovered.
-- Use git history to tie commits to the steps above (reference file paths when possible).
-- Keep a checklist per section (Completed / Outstanding / Next) to make hand-offs easy.
+## 6. References
+- README.md — high-level onboarding (root of the repo).
+- docs/architecture.md — system layout and ownership map.
+- docs/debug.md — run modes, parameters, troubleshooting.
+- .vscode/settings.json — required VS Code settings for the Svelte TS language server.
+- docs/migration-plan.md — this file (state of the project).
